@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../lib64/release/libdrcallstack_static.a  CMakeFiles/drcallstack_static.dir/drcallstack.c.o
+/usr/bin/ranlib ../lib64/release/libdrcallstack_static.a

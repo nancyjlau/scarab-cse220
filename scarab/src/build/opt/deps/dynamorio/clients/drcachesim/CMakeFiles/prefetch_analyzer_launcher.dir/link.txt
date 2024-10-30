@@ -1,0 +1,4 @@
+/usr/bin/g++        -Wl,--hash-style=both  CMakeFiles/prefetch_analyzer_launcher.dir/tests/prefetch_analyzer_launcher.cpp.o CMakeFiles/prefetch_analyzer_launcher.dir/tests/prefetch_analyzer.cpp.o CMakeFiles/prefetch_analyzer_launcher.dir/tests/test_helpers.cpp.o  -o ../bin64/prefetch_analyzer_launcher  ../lib64/release/libdrmemtrace_analyzer.a ../../lib64/libdrfrontendlib.a /usr/lib/x86_64-linux-gnu/libz.so ../lib64/release/libminizip.a ../lib64/release/libdirectory_iterator.a ../../lib64/libdrfrontendlib.a ../../lib64/libdrlibc.a ../../lib64/libdrmemfuncs.a -lsnappy -llz4 /usr/lib/x86_64-linux-gnu/libpthread.so /usr/lib/x86_64-linux-gnu/libz.so 
+/usr/bin/objcopy --only-keep-debug ../bin64/prefetch_analyzer_launcher ../bin64/prefetch_analyzer_launcher.debug
+/usr/bin/objcopy --add-gnu-debuglink=../bin64/prefetch_analyzer_launcher.debug ../bin64/prefetch_analyzer_launcher
+/usr/bin/strip -g -x ../bin64/prefetch_analyzer_launcher

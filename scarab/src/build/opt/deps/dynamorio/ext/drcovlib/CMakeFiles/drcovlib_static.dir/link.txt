@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../lib64/release/libdrcovlib_static.a  CMakeFiles/drcovlib_static.dir/drcovlib.c.o CMakeFiles/drcovlib_static.dir/modules.c.o
+/usr/bin/ranlib ../lib64/release/libdrcovlib_static.a

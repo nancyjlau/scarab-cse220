@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../lib64/release/libdrmemtrace_record_filter.a  CMakeFiles/drmemtrace_record_filter.dir/tools/filter/record_filter.cpp.o CMakeFiles/drmemtrace_record_filter.dir/tools/filter/cache_filter.cpp.o
+/usr/bin/ranlib ../lib64/release/libdrmemtrace_record_filter.a

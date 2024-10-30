@@ -1,0 +1,24 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/rose/scarab/src/deps/dynamorio/core/arch/asm_defines.asm
+configure.h
+/home/rose/scarab/src/deps/dynamorio/core/arch/configure.h
+
+/home/rose/scarab/src/deps/dynamorio/core/arch/x86/memfuncs.asm
+../asm_defines.asm
+/home/rose/scarab/src/deps/dynamorio/core/arch/asm_defines.asm
+x86_asm_defines.asm
+/home/rose/scarab/src/deps/dynamorio/core/arch/x86/x86_asm_defines.asm
+
+/home/rose/scarab/src/deps/dynamorio/core/arch/x86/x86_asm_defines.asm
+
+deps/dynamorio/configure.h
+sys/types.h
+-
+

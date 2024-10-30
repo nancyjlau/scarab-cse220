@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../../../third_party/lib64/release/libipt-sb.a  CMakeFiles/ipt-sb.dir/__/__/__/__/third_party/libipt/sideband/src/pt_sb_session.c.o CMakeFiles/ipt-sb.dir/__/__/__/__/third_party/libipt/sideband/src/pt_sb_context.c.o CMakeFiles/ipt-sb.dir/__/__/__/__/third_party/libipt/sideband/src/pt_sb_file.c.o CMakeFiles/ipt-sb.dir/__/__/__/__/third_party/libipt/sideband/src/pt_sb_pevent.c.o
+/usr/bin/ranlib ../../../../third_party/lib64/release/libipt-sb.a

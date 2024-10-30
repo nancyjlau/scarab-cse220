@@ -1,0 +1,36 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/rose/scarab/src/deps/dynamorio/tools/run_in_bg.c
+configure.h
+/home/rose/scarab/src/deps/dynamorio/tools/configure.h
+windows.h
+-
+process.h
+-
+io.h
+-
+unistd.h
+-
+sys/types.h
+-
+string.h
+-
+fcntl.h
+-
+sys/stat.h
+-
+stdlib.h
+-
+stdio.h
+-
+
+deps/dynamorio/configure.h
+sys/types.h
+-
+

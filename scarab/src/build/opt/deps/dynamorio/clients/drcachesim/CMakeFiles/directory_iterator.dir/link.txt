@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../lib64/release/libdirectory_iterator.a  CMakeFiles/directory_iterator.dir/common/directory_iterator.cpp.o
+/usr/bin/ranlib ../lib64/release/libdirectory_iterator.a

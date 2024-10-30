@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../lib64/release/libdrmgr_static.a  CMakeFiles/drmgr_static.dir/drmgr.c.o
+/usr/bin/ranlib ../lib64/release/libdrmgr_static.a

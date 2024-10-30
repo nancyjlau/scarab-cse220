@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../lib64/release/libdrmemtrace_invariant_checker.a  CMakeFiles/drmemtrace_invariant_checker.dir/tools/invariant_checker.cpp.o
+/usr/bin/ranlib ../lib64/release/libdrmemtrace_invariant_checker.a

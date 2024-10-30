@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../lib64/release/libdrir2trace.a  CMakeFiles/drir2trace.dir/ir2trace.cpp.o
+/usr/bin/ranlib ../../lib64/release/libdrir2trace.a

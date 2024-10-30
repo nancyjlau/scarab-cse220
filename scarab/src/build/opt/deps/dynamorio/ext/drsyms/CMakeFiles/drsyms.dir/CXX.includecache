@@ -1,0 +1,16 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/rose/scarab/src/deps/dynamorio/ext/drsyms/demangle.cc
+stdio.h
+-
+demangle.h
+/home/rose/scarab/src/deps/dynamorio/ext/drsyms/demangle.h
+
+/home/rose/scarab/src/deps/dynamorio/ext/drsyms/demangle.h
+

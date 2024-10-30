@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../lib64/release/libdrx_static.a  CMakeFiles/drx_static.dir/drx.c.o CMakeFiles/drx_static.dir/drx_buf.c.o CMakeFiles/drx_static.dir/scatter_gather_x86.c.o
+/usr/bin/ranlib ../lib64/release/libdrx_static.a

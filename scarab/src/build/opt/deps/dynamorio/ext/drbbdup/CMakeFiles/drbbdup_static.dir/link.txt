@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../lib64/release/libdrbbdup_static.a  CMakeFiles/drbbdup_static.dir/drbbdup.c.o
+/usr/bin/ranlib ../lib64/release/libdrbbdup_static.a

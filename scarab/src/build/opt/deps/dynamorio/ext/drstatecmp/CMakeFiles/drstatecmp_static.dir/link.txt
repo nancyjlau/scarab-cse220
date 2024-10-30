@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../lib64/release/libdrstatecmp_static.a  CMakeFiles/drstatecmp_static.dir/drstatecmp.c.o
+/usr/bin/ranlib ../lib64/release/libdrstatecmp_static.a

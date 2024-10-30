@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../lib64/release/libdrmemtrace_func_view.a  CMakeFiles/drmemtrace_func_view.dir/tools/func_view.cpp.o
+/usr/bin/ranlib ../lib64/release/libdrmemtrace_func_view.a

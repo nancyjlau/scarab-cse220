@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../lib64/release/libdrwrap_static.a  CMakeFiles/drwrap_static.dir/drwrap.c.o CMakeFiles/drwrap_static.dir/drwrap_asm_x86.asm.o
+/usr/bin/ranlib ../lib64/release/libdrwrap_static.a

@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../lib64/release/libdrmemtrace_syscall_mix.a  CMakeFiles/drmemtrace_syscall_mix.dir/tools/syscall_mix.cpp.o
+/usr/bin/ranlib ../lib64/release/libdrmemtrace_syscall_mix.a

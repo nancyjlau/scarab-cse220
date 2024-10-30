@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../lib64/release/libdrpt2ir.a  CMakeFiles/drpt2ir.dir/pt2ir.cpp.o CMakeFiles/drpt2ir.dir/elf_loader.cpp.o
+/usr/bin/ranlib ../../lib64/release/libdrpt2ir.a

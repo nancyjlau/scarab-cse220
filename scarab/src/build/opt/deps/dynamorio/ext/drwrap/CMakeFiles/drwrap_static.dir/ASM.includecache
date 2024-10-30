@@ -1,0 +1,14 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/rose/scarab/src/deps/dynamorio/ext/drwrap/drwrap_asm_x86.asm
+cpp2asm_defines.h
+/home/rose/scarab/src/deps/dynamorio/ext/drwrap/cpp2asm_defines.h
+
+deps/dynamorio/cmake/cpp2asm_defines.h
+

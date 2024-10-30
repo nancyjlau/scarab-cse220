@@ -1,0 +1,4 @@
+/usr/bin/gcc -m64  -fno-strict-aliasing -funsigned-char -fno-stack-protector -fvisibility=internal  -std=gnu99 -fno-unwind-tables -O3 -g3  -Wall -Werror -Wwrite-strings -Wvla -Wno-unused-but-set-variable -Wno-stringop-truncation -Wno-format-truncation -Wno-stringop-overflow      -Wl,--hash-style=both  CMakeFiles/drnudgeunix.dir/nudgeunix.c.o CMakeFiles/drnudgeunix.dir/__/core/unix/nudgesig.c.o  -o ../bin64/drnudgeunix 
+/usr/bin/objcopy --only-keep-debug ../bin64/drnudgeunix ../bin64/drnudgeunix.debug
+/usr/bin/objcopy --add-gnu-debuglink=../bin64/drnudgeunix.debug ../bin64/drnudgeunix
+/usr/bin/strip -g -x ../bin64/drnudgeunix

@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../lib64/libdrmemfuncs.a  CMakeFiles/drmemfuncs.dir/arch/x86/memfuncs.asm.o CMakeFiles/drmemfuncs.dir/lib/memmove.c.o
+/usr/bin/ranlib ../lib64/libdrmemfuncs.a

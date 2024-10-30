@@ -1,0 +1,4 @@
+/usr/bin/g++        -Wl,--hash-style=both  CMakeFiles/drcpusim_ops.dir/optionlist.cpp.o CMakeFiles/drcpusim_ops.dir/options.cpp.o  -o ../bin64/drcpusim_ops 
+/usr/bin/objcopy --only-keep-debug ../bin64/drcpusim_ops ../bin64/drcpusim_ops.debug
+/usr/bin/objcopy --add-gnu-debuglink=../bin64/drcpusim_ops.debug ../bin64/drcpusim_ops
+/usr/bin/strip -g -x ../bin64/drcpusim_ops

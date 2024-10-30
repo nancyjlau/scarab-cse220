@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../../../third_party/lib64/release/libpevent.a  CMakeFiles/pevent.dir/__/__/__/__/third_party/libipt/pevent/src/pevent.c.o
+/usr/bin/ranlib ../../../../third_party/lib64/release/libpevent.a

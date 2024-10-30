@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../lib64/release/libdrsyms_static.a  CMakeFiles/drsyms_static.dir/drsyms_unix_frontend.c.o CMakeFiles/drsyms_static.dir/drsyms_unix_common.c.o CMakeFiles/drsyms_static.dir/drsyms_dwarf.c.o CMakeFiles/drsyms_static.dir/demangle.cc.o CMakeFiles/drsyms_static.dir/drsyms_common.c.o CMakeFiles/drsyms_static.dir/drsyms_elf.c.o
+/usr/bin/ranlib ../lib64/release/libdrsyms_static.a

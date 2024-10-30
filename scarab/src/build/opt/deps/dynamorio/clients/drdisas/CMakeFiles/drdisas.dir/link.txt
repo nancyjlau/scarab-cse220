@@ -1,0 +1,4 @@
+/usr/bin/g++ -m64  -fno-strict-aliasing -funsigned-char -fno-stack-protector -fvisibility=internal  -std=c++11 -Wsuggest-override -O3 -g3  -Wall -Werror -Wwrite-strings -Wvla -Wno-unused-but-set-variable -Wno-stringop-truncation -Wno-format-truncation -Wno-stringop-overflow -DX64   -DX64    -Wl,--hash-style=both  CMakeFiles/drdisas.dir/drdisas.cpp.o  -o ../bin64/drdisas  ../../lib64/libdrdecode.a ../../lib64/libdrlibc.a 
+/usr/bin/objcopy --only-keep-debug ../bin64/drdisas ../bin64/drdisas.debug
+/usr/bin/objcopy --add-gnu-debuglink=../bin64/drdisas.debug ../bin64/drdisas
+/usr/bin/strip -g -x ../bin64/drdisas
