@@ -98,6 +98,9 @@ void init_dcache_stage(uns8 proc_id, const char* name) {
   init_cache(&dc->dcache, "DCACHE", DCACHE_SIZE, DCACHE_ASSOC, DCACHE_LINE_SIZE,
              sizeof(Dcache_Data), DCACHE_REPL);
 
+  init_cache(&dc->fa_cache, "FA_DCACHE", DCACHE_SIZE, DCACHE_SIZE/DCACHE_LINE_SIZE, 
+             DCACHE_LINE_SIZE, sizeof(Dcache_Data), REPL_TRUE_LRU);
+
   dc->dcache.access_history = (Hash_Table*)malloc(sizeof(Hash_Table));
   init_hash_table(dc->dcache.access_history, "cache_line_history",
                  dc->dcache.num_sets * dc->dcache.assoc * 4,  /* buckets */
@@ -167,31 +170,40 @@ void debug_dcache_stage() {
 
 /**************************************************************************************/
 
-static void classify_cache_miss(Cache* cache, Addr addr, Flag cache_full, Flag found_invalid) {
-    /* Get line address using his cache_index function */
+static void classify_cache_miss(Cache* cache, Addr addr) {
+    /* Get line address using cache_index function */
+    Addr line_addr, tag;
+    uns set = cache_index(cache, addr, &tag, &line_addr);
 
-    /* Check all ways in this set for invalid entries */
     /* Look up this address in our history */
     Flag created;
     Cache_Line_History* history = (Cache_Line_History*)hash_table_access(
-      cache->access_history, (int64)addr);
+      cache->access_history, (int64)line_addr);
     if(!history) {
       history = (Cache_Line_History*)hash_table_access_create(
-        cache->access_history, (int64)addr, &created);
+        cache->access_history, (int64)line_addr, &created);
     }
     if (created) {
-        history->addr = addr;
+        /* First time access - compulsory miss */
+        history->addr = line_addr;
         history->ever_accessed = TRUE;
         cache->compulsory_misses++;
         STAT_EVENT(dc->proc_id, DCACHE_MISS_COMPULSORY);
-    } else if (cache_full) {
-      cache->capacity_misses++;
-      STAT_EVENT(dc->proc_id, DCACHE_MISS_CAPACITY);
     } else {
-      cache->conflict_misses++;
-      STAT_EVENT(dc->proc_id, DCACHE_MISS_CONFLICT);
+        /* Check if it hits in fully associative cache */
+        void* fa_hit = cache_access(&dc->fa_cache, addr, &line_addr, TRUE);
+        if (fa_hit) {
+            /* Hit in FA cache but miss in real cache = conflict miss */
+            cache->conflict_misses++;
+            STAT_EVENT(dc->proc_id, DCACHE_MISS_CONFLICT);
+        } else {
+            /* Miss in both caches = capacity miss */
+            cache->capacity_misses++;
+            STAT_EVENT(dc->proc_id, DCACHE_MISS_CAPACITY);
+        }
     }
 }
+
 /**************************************************************************************/
 /* update_dcache_stage: */
 void update_dcache_stage(Stage_Data* src_sd) {
@@ -418,11 +430,13 @@ void update_dcache_stage(Stage_Data* src_sd) {
 
       if(CACHE_STAT_ENABLE)
         dc_miss_stat(op);
+      
+      classify_cache_miss(&dc->dcache, op->oracle_info.va);
 
       if(op->table_info->mem_type == MEM_LD) {  // load request
         Flag cache_full = dc->dcache.num_lines <= dc->dcache.num_valid;
         Flag found_invalid = cache_get_invalid_line_count(&dc->dcache, op->oracle_info.va) > 0;
-        classify_cache_miss(&dc->dcache, op->oracle_info.va, cache_full, found_invalid);
+        // classify_cache_miss(&dc->dcache, op->oracle_info.va, cache_full, found_invalid);
         if(((model->mem == MODEL_MEM) &&
             scan_stores(
               op->oracle_info.va,
@@ -724,6 +738,9 @@ Flag dcache_fill_line(Mem_Req* req) {
 
     data = (Dcache_Data*)cache_insert(&dc->dcache, dc->proc_id, req->addr,
                                       &line_addr, &repl_line_addr);
+
+    void* fa_data = cache_insert(&dc->fa_cache, proc_id, req->addr, &line_addr, &repl_line_addr);
+
     DEBUG(dc->proc_id,
           "Filling dcache  off_path:%d addr:0x%s  :%7d index:%7d op_count:%d "
           "oldest:%lld\n",
@@ -944,6 +961,22 @@ void wp_process_dcache_fill(Dcache_Data* line, Mem_Req* req) {
 /* cleanup_dcache_stage: */
 void cleanup_dcache_stage(void) {
     if (dc) {
+        /* Clean up fully associative cache */
+        if (dc->fa_cache.entries) {
+            for (uns ii = 0; ii < dc->fa_cache.num_sets; ii++) {
+                for (uns jj = 0; jj < dc->fa_cache.assoc; jj++) {
+                    if (dc->fa_cache.entries[ii][jj].data != INIT_CACHE_DATA_VALUE) {
+                        free(dc->fa_cache.entries[ii][jj].data);
+                    }
+                }
+                free(dc->fa_cache.entries[ii]);
+            }
+            free(dc->fa_cache.entries);
+        }
+        if (dc->fa_cache.repl_ctrs) {
+            free(dc->fa_cache.repl_ctrs);
+        }
+
         /* ISMAIL: Clean up hash table */
         if (dc->dcache.access_history) {
             hash_table_clear(dc->dcache.access_history);
