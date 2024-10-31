@@ -1,4 +1,0 @@
-/usr/bin/g++ -fPIC      -m64  -fno-strict-aliasing -funsigned-char -fno-stack-protector -fvisibility=internal  -std=c++11 -Wsuggest-override -O3 -g3  -Wall -Werror -Wwrite-strings -Wvla -Wno-unused-but-set-variable -Wno-stringop-truncation -Wno-format-truncation -Wno-stringop-overflow -O2     -fno-stack-protector  -Xlinker -z -Xlinker now -fPIC -shared -lgcc -Wl,--hash-style=both -Xlinker -T -Xlinker "/home/rose/scarab/src/build/opt/deps/dynamorio/api/samples/stl_test.ldscript"   -Wl,--hash-style=both -shared -Wl,-soname,libstl_test.so -o ../bin/libstl_test.so CMakeFiles/stl_test.dir/stl_test.cpp.o  ../../lib64/release/libdynamorio.so 
-/usr/bin/objcopy --only-keep-debug ../bin/libstl_test.so ../bin/libstl_test.so.debug
-/usr/bin/objcopy --add-gnu-debuglink=../bin/libstl_test.so.debug ../bin/libstl_test.so
-/usr/bin/strip -g -x ../bin/libstl_test.so

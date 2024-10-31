@@ -1,2 +1,0 @@
-/usr/bin/ar qc ../lib64/release/libdrreg_static.a  CMakeFiles/drreg_static.dir/drreg.c.o
-/usr/bin/ranlib ../lib64/release/libdrreg_static.a

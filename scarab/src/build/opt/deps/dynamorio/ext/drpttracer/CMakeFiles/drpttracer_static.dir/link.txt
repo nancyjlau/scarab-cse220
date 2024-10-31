@@ -1,2 +1,0 @@
-/usr/bin/ar qc ../lib64/release/libdrpttracer_static.a  CMakeFiles/drpttracer_static.dir/drpttracer.c.o
-/usr/bin/ranlib ../lib64/release/libdrpttracer_static.a

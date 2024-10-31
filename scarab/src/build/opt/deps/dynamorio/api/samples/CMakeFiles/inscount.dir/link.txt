@@ -1,4 +1,0 @@
-/usr/bin/g++ -fPIC      -m64  -fno-strict-aliasing -funsigned-char -fno-stack-protector -fvisibility=internal  -std=c++11 -Wsuggest-override -O3 -g3  -Wall -Werror -Wwrite-strings -Wvla -Wno-unused-but-set-variable -Wno-stringop-truncation -Wno-format-truncation -Wno-stringop-overflow -O2     -fno-stack-protector  -Xlinker -z -Xlinker now -fPIC -shared -lgcc -Wl,--hash-style=both -Xlinker -T -Xlinker "/home/rose/scarab/src/build/opt/deps/dynamorio/api/samples/inscount.ldscript"   -Wl,--hash-style=both -shared -Wl,-soname,libinscount.so -o ../bin/libinscount.so CMakeFiles/inscount.dir/inscount.cpp.o  ../../ext/lib64/release/libdrmgr.so ../../ext/lib64/release/libdrcontainers.a ../../lib64/release/libdynamorio.so 
-/usr/bin/objcopy --only-keep-debug ../bin/libinscount.so ../bin/libinscount.so.debug
-/usr/bin/objcopy --add-gnu-debuglink=../bin/libinscount.so.debug ../bin/libinscount.so
-/usr/bin/strip -g -x ../bin/libinscount.so
