@@ -138,7 +138,7 @@
 
 ### prefetcher
 # Kept same as Kaby Lake
---pref_framework_on             1
+--pref_framework_on             0
 --pref_stream_on                1
 --pref_train_on_pref_misses     0
 --pref_oracle_train             0
