@@ -431,8 +431,10 @@ void update_dcache_stage(Stage_Data* src_sd) {
       if(CACHE_STAT_ENABLE)
         dc_miss_stat(op);
       
-      classify_cache_miss(&dc->dcache, op->oracle_info.va);
-
+      if(!op->off_path) {
+        classify_cache_miss(&dc->dcache, op->oracle_info.va);
+      }
+      
       if(op->table_info->mem_type == MEM_LD) {  // load request
         Flag cache_full;
 	cache_full = dc->dcache.num_lines <= dc->dcache.num_valid;
