@@ -1,0 +1,46 @@
+{
+    "plotinfo": {
+        "seperate": [ 
+        
+            {
+                "type": "default",
+                "stat": "Periodic IPC", 
+                "file": "/memory.stat.0.csv"
+            },
+            {
+                "type": "ratio",
+                "stat": "DCACHE_MISS_pct", 
+                "file": "/memory.stat.0.csv"
+            },
+            {
+                "type": "default",
+                "stat": "DCACHE_MISS_count", 
+                "file": "/memory.stat.0.csv"
+            },
+            {
+                "type": "default",
+                "stat": "DCACHE_HIT_count", 
+                "file": "/memory.stat.0.csv"
+            }
+        ],
+        "stacked": {
+            "name": "lab2_plots/3c_misses.png",
+            "ylabel": "Dcache miss ratio", 
+            "info": [
+                {
+                    "stat": "DCACHE_MISS_COMPULSORY_count", 
+                    "file": "/memory.stat.0.csv"
+                },
+                {
+                    "stat": "DCACHE_MISS_CAPACITY_count", 
+                    "file": "/memory.stat.0.csv"
+                },
+                {
+                    "stat": "DCACHE_MISS_CONFLICT_count", 
+                    "file": "/memory.stat.0.csv"
+                }
+            ]
+        }
+    }
+}
+
