@@ -47,3 +47,29 @@ if(num_epsides > MAXEPISODES || cur_best_d.score >= MAXSCORE){
     D = cur_best_d.d 
 }
 */
+#include "pref_bo.h"
+/// globals /// 
+
+int num_episodes = 0; 
+
+void episode_occurs(void* op){ 
+    // Actually import op struct but I cant be fucking bothered rn  
+    if(op){
+        num_episodes++; 
+    }
+
+    if(num_episodes > 1){ //EPISODE_MAX figure out how to get this param in here 
+        num_episodes = 0; 
+
+    } 
+
+}
+
+int highest_score(RR_Table* table){ 
+    // Find highest algorithm 
+    // probably best way to do this is to store and index value for whichever element is highest and check it when we incriment 
+}
+
+void incriminet_score(uns8 tag){ // need to check the tag datatype for tag 
+
+}

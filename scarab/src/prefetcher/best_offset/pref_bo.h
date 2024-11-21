@@ -10,6 +10,7 @@
 typedef struct RR_Table_Struct{ 
     Cache cache;
     uns8* scores; 
+    int offset; // include actually offset datatype which I think exists 
 
 } RR_Table;
 
