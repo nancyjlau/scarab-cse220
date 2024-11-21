@@ -1,0 +1,18 @@
+/* -*- Mode: c -*- */
+
+/* Best Offset Prefetcher Parameters */
+
+DEF_PARAM(pref_bo_on                , PREF_BO_ON                , Flag   , Flag      , TRUE        ,      ) 
+DEF_PARAM(debug_pref_bo             , DEBUG_PREF_BO             , Flag   , Flag      , FALSE       ,      ) 
+
+/* Recent Request Table Parameters */
+DEF_PARAM(pref_bo_rr_size           , PREF_BO_RR_SIZE          , uns    , uns       , 256         ,      )
+DEF_PARAM(pref_bo_tag_bits          , PREF_BO_TAG_BITS         , uns    , uns       , 12          ,      )
+
+/* Learning Phase Parameters */
+DEF_PARAM(pref_bo_score_max         , PREF_BO_SCORE_MAX        , uns    , uns       , 31          ,      )
+DEF_PARAM(pref_bo_round_max         , PREF_BO_ROUND_MAX        , uns    , uns       , 100         ,      )
+DEF_PARAM(pref_bo_bad_score         , PREF_BO_BAD_SCORE        , uns    , uns       , 1           ,      )
+
+/* Prefetch Control */
+DEF_PARAM(pref_bo_degree            , PREF_BO_DEGREE           , uns    , uns       , 1           ,      )
