@@ -94,6 +94,7 @@ typedef struct Cache_Entry_struct {
 
   uns8    reference_val;    /* for re-reference replacement policy */
   Flag    outcome;          /* for replacement policy */
+  Flag    RR_element; 
 } Cache_Entry;
 
 // DO NOT CHANGE THIS ORDER
