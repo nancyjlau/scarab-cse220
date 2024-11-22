@@ -48,6 +48,32 @@ if(num_epsides > MAXEPISODES || cur_best_d.score >= MAXSCORE){
 }
 */
 #include "pref_bo.h"
+#include "debug/debug_macros.h"
+#include "debug/debug_print.h"
+#include "globals/assert.h"
+#include "globals/global_defs.h"
+#include "globals/global_types.h"
+#include "globals/global_vars.h"
+#include "globals/utils.h"
+
+#include "bp/bp.h"
+#include "dcache_stage.h"
+#include "map.h"
+#include "model.h"
+
+#include "core.param.h"
+#include "debug/debug.param.h"
+#include "memory/memory.param.h"
+#include "prefetcher//stream.param.h"
+#include "prefetcher/pref.param.h"
+#include "prefetcher/pref_common.h"
+#include "prefetcher/stream_pref.h"
+#include "statistics.h"
+
+#include "cmp_model.h"
+#include "prefetcher/l2l1pref.h"
+#include "libs/hash_lib.h"
+#include "libs/port_lib.h"
 /// globals /// 
 
 int num_episodes = 0; 
@@ -71,5 +97,18 @@ int highest_score(RR_Table* table){
 }
 
 void incriminet_score(uns8 tag){ // need to check the tag datatype for tag 
+    // Dcache access 
+    // if present, incriment score for corresponding d 
+
+}
+
+RR_Table* init_RR_table(int table_entry_count){
+    RR_Table* rr_table = (RR_Table*)malloc(sizeof(RR_Table)); // I forget the correct format for malloc in c, should get corrected  
+    rr_table->scores = (uns8*)malloc(sizeof(uns8) * table_entry_count);  // again double check malloc formatting here 
+    int line_size = 1; // this should be how many storage bits we need in a actual storage entry: ie tag size I believe (check paper)
+    // init cache 
+    init_cache(rr_table->cache, "DCACHE", table_entry_count * line_size, 1, line_size,
+             sizeof(Dcache_Data), DCACHE_REPL); // unsure what the replacement policy is for the RR table, check paper. Should probably hardcode whatever replacement policy it uses, although I'm not actually sure 
+             //if a directly mapped caches replacement policy actually matters? 
 
 }
