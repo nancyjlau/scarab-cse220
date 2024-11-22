@@ -74,41 +74,96 @@ if(num_epsides > MAXEPISODES || cur_best_d.score >= MAXSCORE){
 #include "prefetcher/l2l1pref.h"
 #include "libs/hash_lib.h"
 #include "libs/port_lib.h"
-/// globals /// 
 
+/// globals /// 
 int num_episodes = 0; 
 
-void episode_occurs(void* op){ 
-    // Actually import op struct but I cant be fucking bothered rn  
-    if(op){
-        num_episodes++; 
+typedef uns8 (*HashFunction)(uns32); //make sure input type is correct for when we actually impliment this 
+
+void replace_best_offset(BO_Pref*);
+void round_occurs(Mem_Req_Info*, BO_Pref*); 
+void incriminet_score(int, Score_Table*);
+RR_Table* init_rr_table(HashFunction); 
+
+void round_occurs(Mem_Req_Info* req, BO_Pref* bo_pref){ 
+    if(req){
+        bo_pref->round_count++; 
     }
 
-    if(num_episodes > 1){ //EPISODE_MAX figure out how to get this param in here 
-        num_episodes = 0; 
+    // access hash table  
+    void* access = access_rr_table(req); // placeholder needs implimentation 
+
+    if(access){ //check if element is in rr table 
+        int access_index = get_access_index(access); // placeholder needs implimentation 
+        // need to convert an accessed item from the recent requests table into a corresponding index in the score table 
+        // unsure how to do this, need to check paper more closely for exactly how the score table is implimented in relation to the access table 
+        incriminet_score(access_index, bo_pref->score_table); 
+    } else { 
+        insert_rr_table(req); //still a placeholder here 
+        // 
+    }
+
+    if(bo_pref->round_count > bo_pref->round_max){ 
+        end_learning_phase(bo_pref); 
 
     } 
 
-}
-
-int highest_score(RR_Table* table){ 
-    // Find highest algorithm 
-    // probably best way to do this is to store and index value for whichever element is highest and check it when we incriment 
-}
-
-void incriminet_score(uns8 tag){ // need to check the tag datatype for tag 
-    // Dcache access 
-    // if present, incriment score for corresponding d 
 
 }
 
-RR_Table* init_RR_table(int table_entry_count){
-    RR_Table* rr_table = (RR_Table*)malloc(sizeof(RR_Table)); // I forget the correct format for malloc in c, should get corrected  
-    rr_table->scores = (uns8*)malloc(sizeof(uns8) * table_entry_count);  // again double check malloc formatting here 
-    int line_size = 1; // this should be how many storage bits we need in a actual storage entry: ie tag size I believe (check paper)
-    // init cache 
-    init_cache(rr_table->cache, "DCACHE", table_entry_count * line_size, 1, line_size,
-             sizeof(Dcache_Data), DCACHE_REPL); // unsure what the replacement policy is for the RR table, check paper. Should probably hardcode whatever replacement policy it uses, although I'm not actually sure 
-             //if a directly mapped caches replacement policy actually matters? 
+void end_learning_phase(BO_Pref* bo_pref){
+    replace_best_offset(bo_pref); 
+    bo_pref->round_count = 0; 
+}
 
+void replace_best_offset(BO_Pref* bo_pref){ 
+    bo_pref->best_offset = bo_pref->score_table->table[bo_pref->score_table->highest_score_index]->offset; 
+}
+
+void incriminet_score(int index, Score_Table* score_table){ // need to check the tag datatype for tag 
+    score_table->table[index]->score++; 
+    if(score_table->table[index]->score > score_table->table[score_table->highest_score_index]->score) {
+        score_table->highest_score_index = index;  
+    }
+
+}
+
+RR_Table* init_rr_table(HashFunction hash_function){
+    RR_Table* rr_table; // I forget the correct format for malloc in c, should get corrected  
+
+    rr_table->hashmap = init_hashmap();  // needs work here for proper hashmap init 
+    rr_table->hash_function = hash_function; 
+
+    return rr_table; 
+}
+
+Score_Table* init_score_table(int table_entry_count){
+    Score_Table* score_table; 
+    score_table->table = (Score_Table_Entry**)malloc(sizeof(Score_Table_Entry*) * table_entry_count);
+    score_table->table_size = table_entry_count; 
+    score_table->highest_score_index = 0;  
+    return score_table; 
+
+}
+
+Score_Table_Entry* init_score_table_entry(uns8 score, uns16 offset){ // still need to check offset dtype 
+    Score_Table_Entry* score_table; 
+    score_table->score = score; 
+    score_table->offset = offset; 
+    return score_table; 
+}
+
+BO_Pref* init_bo_pref(int table_entry_count, HashFunction hash_function){ //
+    BO_Pref* bo_pref; 
+    bo_pref->rr_table = init_rr_table(hash_function);
+    bo_pref->score_table = init_score_table(table_entry_count); 
+    bo_pref->round_count = 0; 
+    bo_pref->score_max = 5; //hard coded, should read the defined param
+    bo_pref->round_max = 10; //hard coded, should read the defined param  
+    bo_pref->best_offset = 0; // unsure what initialization value should be for this  
+    return bo_pref;  
+}
+
+uns8 hash_function(uns32) { // take a memory address (make sure to take the correct data type) and xor 8 least significant against next 8 bits. Figure out how to do that later... 
+    return 1;  
 }
