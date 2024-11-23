@@ -69,6 +69,7 @@ if(num_epsides > MAXEPISODES || cur_best_d.score >= MAXSCORE){
 #include "prefetcher/pref_common.h"
 #include "prefetcher/stream_pref.h"
 #include "statistics.h"
+#include "prefetcher/best_offset/pref_bo.param.h"
 
 #include "cmp_model.h"
 #include "prefetcher/l2l1pref.h"
@@ -76,7 +77,6 @@ if(num_epsides > MAXEPISODES || cur_best_d.score >= MAXSCORE){
 #include "libs/port_lib.h"
 
 /// globals /// 
-int num_episodes = 0; 
 
 typedef uns8 (*HashFunction)(uns32); //make sure input type is correct for when we actually impliment this 
 
@@ -114,6 +114,7 @@ void round_occurs(Mem_Req_Info* req, BO_Pref* bo_pref){
 void end_learning_phase(BO_Pref* bo_pref){
     replace_best_offset(bo_pref); 
     bo_pref->round_count = 0; 
+    reset_scores(bo_pref->score_table); 
 }
 
 void replace_best_offset(BO_Pref* bo_pref){ 
@@ -139,31 +140,43 @@ RR_Table* init_rr_table(HashFunction hash_function){
 
 Score_Table* init_score_table(int table_entry_count){
     Score_Table* score_table; 
-    score_table->table = (Score_Table_Entry**)malloc(sizeof(Score_Table_Entry*) * table_entry_count);
+    score_table->table = (Score_Table_Entry**)calloc(table_entry_count, sizeof(Score_Table_Entry*));
     score_table->table_size = table_entry_count; 
     score_table->highest_score_index = 0;  
+    for(int i; i < table_entry_count; i++){
+        score_table->table[i] = init_score_table_entry(); 
+    }
     return score_table; 
 
 }
 
-Score_Table_Entry* init_score_table_entry(uns8 score, uns16 offset){ // still need to check offset dtype 
+// initializes score table entry with a score and an offset, both of which are set to 0 at initialization. 
+Score_Table_Entry* init_score_table_entry(){ // still need to check offset dtype 
     Score_Table_Entry* score_table; 
-    score_table->score = score; 
-    score_table->offset = offset; 
+    score_table->score = 0; 
+    score_table->offset = 0; 
     return score_table; 
 }
 
+
+// Calls all the other init functions to build the full BO_Pref struct 
 BO_Pref* init_bo_pref(int table_entry_count, HashFunction hash_function){ //
     BO_Pref* bo_pref; 
     bo_pref->rr_table = init_rr_table(hash_function);
     bo_pref->score_table = init_score_table(table_entry_count); 
     bo_pref->round_count = 0; 
-    bo_pref->score_max = 5; //hard coded, should read the defined param
-    bo_pref->round_max = 10; //hard coded, should read the defined param  
+    bo_pref->score_max = PREF_BO_SCORE_MAX; 
+    bo_pref->round_max = PREF_BO_ROUND_MAX;   
     bo_pref->best_offset = 0; // unsure what initialization value should be for this  
     return bo_pref;  
 }
 
 uns8 hash_function(uns32) { // take a memory address (make sure to take the correct data type) and xor 8 least significant against next 8 bits. Figure out how to do that later... 
     return 1;  
+}
+
+void reset_scores(Score_Table* score_table){
+    for(int i; i < score_table->table_size; i++){
+        score_table->table[i]->score = 0; 
+    }
 }

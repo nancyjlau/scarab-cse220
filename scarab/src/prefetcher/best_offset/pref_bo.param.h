@@ -35,7 +35,7 @@
 
 #define DEF_PARAM(name, variable, type, func, def, const) \
   extern const type variable;
-#include "pref_2dc.param.def"
+#include "pref_bo.param.def"
 #undef DEF_PARAM
 
 /**************************************************************************************/
