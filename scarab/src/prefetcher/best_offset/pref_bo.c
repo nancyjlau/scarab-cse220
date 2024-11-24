@@ -77,14 +77,88 @@ if(num_epsides > MAXEPISODES || cur_best_d.score >= MAXSCORE){
 #include "libs/port_lib.h"
 
 /// globals /// 
-
+static BO_Pref* bo_pref = NULL;
 typedef uns8 (*HashFunction)(Addr); //make sure input type is correct for when we actually impliment this 
+
+// dynamically generate offset list ??
+static uns16 offset_list[PREF_BO_OFFSET_LIST_SIZE];
+
+static bool isPrimeFactor(int n) {
+    if(n <= 1) return FALSE;
+    for(int i = 2; i * i <= n; i++) {
+        if(n % i == 0) return FALSE;
+    }
+    return TRUE;
+}
+
+static bool hasOnlySmallPrimes(int n) {
+    if(n <= 1) return FALSE;
+    
+    int temp = n;
+    for(int i = 2; i <= temp; i++) {
+        if(temp % i == 0) {
+            if(isPrimeFactor(i) && i > 5) {
+                return FALSE;
+            }
+            while(temp % i == 0) {
+                temp /= i;
+            }
+        }
+    }
+    return TRUE;
+}
+
+static void generate_offset_list(uns16* offset_list, int max_offset) {
+    int count = 0;
+    for(int i = 1; i <= max_offset; i++) {
+        if(hasOnlySmallPrimes(i)) {
+            ASSERT(count < PREF_BO_OFFSET_LIST_SIZE);
+            offset_list[count++] = i;
+        }
+    }
+    ASSERT(count == PREF_BO_OFFSET_LIST_SIZE);  
+}
 
 void replace_best_offset(BO_Pref*);
 void above_req(Mem_Req_Info*, BO_Pref*); //May take Pref_Mem_Req or just an address input 
 void below_receive(Pref_Req_Info*, BO_Pref*);
 void incriminet_score(int, Score_Table*);
 RR_Table* init_rr_table(HashFunction); 
+Addr pick_d(Score_Table*, uns);
+void end_learning_phase(BO_Pref*);
+
+// based on the stuff in pref_phase.c try to connect this file to Scarab stuff
+// pref_bo_init is for when scarab initizalized the prefetchers and set up the structures
+// for the three functions below this for scarab to call on different cache events
+void pref_bo_init(HWP* hwp) {
+    if(!PREF_BO_ON)
+        return;
+    
+    bo_pref = init_bo_pref(PREF_BO_OFFSET_LIST_SIZE, hash_function);
+    bo_pref->hwp_info = hwp->hwp_info;
+    bo_pref->hwp_info->enabled = TRUE;
+}
+
+void pref_bo_ul1_train(Addr lineAddr, Addr loadPC, Flag pref_hit) {
+    if(!PREF_BO_ON || !bo_pref)
+        return;
+
+    Mem_Req_Info req;
+    req.addr = lineAddr;
+    above_req(&req, bo_pref);
+}
+
+void pref_bo_ul1_miss(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hist) {
+    pref_bo_ul1_train(lineAddr, loadPC, FALSE);
+}
+
+void pref_bo_ul1_prefhit(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hist) {
+    pref_bo_ul1_train(lineAddr, loadPC, TRUE);
+}
+
+void pref_bo_ul1_hit(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hist) {
+    // (based on the paper) no training on regular hits
+}
 
 void above_req(Mem_Req_Info* req, BO_Pref* bo_pref){ 
     if(!PREF_BO_ON) {
@@ -157,8 +231,7 @@ void incriminet_score(int index, Score_Table* score_table){ // need to check the
 }
 
 RR_Table* init_rr_table(HashFunction hash_function){
-    RR_Table* rr_table; // I forget the correct format for malloc in c, should get corrected  
-
+    RR_Table* rr_table = (RR_Table*)calloc(1, sizeof(RR_Table)); // is this the right format for malloc in C
     rr_table->hashmap = init_hashmap();  // needs work here for proper hashmap init 
     rr_table->hash_function = hash_function; 
 
@@ -246,3 +319,18 @@ Addr* insert_rr_table(Addr req, RR_Table* rr_table) {
     }
     return access; 
 } 
+
+Addr pick_d(Score_Table* score_table, uns round_index) {
+    return offset_list[round_index % PREF_BO_OFFSET_LIST_SIZE];
+}
+
+int get_access_index(Addr* access) {
+    if(!access) return -1;
+    
+    Addr offset = *access;
+    for(int i = 0; i < PREF_BO_OFFSET_LIST_SIZE; i++) {
+        if(offset_list[i] == offset)
+            return i;
+    }
+    return -1;
+}
