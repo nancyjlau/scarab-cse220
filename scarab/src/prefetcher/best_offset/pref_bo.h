@@ -5,7 +5,7 @@
 #include "globals/global_defs.h"
 #include "libs/hash_lib.h"
 
-typedef uns8 (*HashFunction)(uns32); //make sure input type is correct for when we actually impliment this 
+typedef uns8 (*HashFunction)(Addr); //make sure input type is correct for when we actually impliment this 
 
 
 typedef struct RR_Table_Struct{ 
@@ -32,6 +32,7 @@ typedef struct BO_Pref_Struct{
     Score_Table* score_table; 
     RR_Table* rr_table;  
     Counter round_count; 
+    Counter round_index;
     int round_max; 
     int score_max; 
     uns16 best_offset; //still need to check the offset dtype ;( 
