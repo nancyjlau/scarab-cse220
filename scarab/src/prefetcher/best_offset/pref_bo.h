@@ -36,6 +36,7 @@ typedef struct BO_Pref_Struct{
     int round_max; 
     int score_max; 
     uns16 best_offset; //still need to check the offset dtype ;( 
+    HWP_Info* hwp_info; // CHECK THE TYPE ON THIS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 } BO_Pref;  
 
 

@@ -81,43 +81,11 @@ static BO_Pref* bo_pref = NULL;
 typedef uns8 (*HashFunction)(Addr); //make sure input type is correct for when we actually impliment this 
 
 // dynamically generate offset list ??
-static uns16 offset_list[PREF_BO_OFFSET_LIST_SIZE];
 
-static bool isPrimeFactor(int n) {
-    if(n <= 1) return FALSE;
-    for(int i = 2; i * i <= n; i++) {
-        if(n % i == 0) return FALSE;
-    }
-    return TRUE;
-}
 
-static bool hasOnlySmallPrimes(int n) {
-    if(n <= 1) return FALSE;
-    
-    int temp = n;
-    for(int i = 2; i <= temp; i++) {
-        if(temp % i == 0) {
-            if(isPrimeFactor(i) && i > 5) {
-                return FALSE;
-            }
-            while(temp % i == 0) {
-                temp /= i;
-            }
-        }
-    }
-    return TRUE;
-}
 
-static void generate_offset_list(uns16* offset_list, int max_offset) {
-    int count = 0;
-    for(int i = 1; i <= max_offset; i++) {
-        if(hasOnlySmallPrimes(i)) {
-            ASSERT(count < PREF_BO_OFFSET_LIST_SIZE);
-            offset_list[count++] = i;
-        }
-    }
-    ASSERT(count == PREF_BO_OFFSET_LIST_SIZE);  
-}
+
+
 
 void replace_best_offset(BO_Pref*);
 void above_req(Mem_Req_Info*, BO_Pref*); //May take Pref_Mem_Req or just an address input 
@@ -130,7 +98,7 @@ void end_learning_phase(BO_Pref*);
 // based on the stuff in pref_phase.c try to connect this file to Scarab stuff
 // pref_bo_init is for when scarab initizalized the prefetchers and set up the structures
 // for the three functions below this for scarab to call on different cache events
-void pref_bo_init(HWP* hwp) {
+void init_global_bo_pref(HWP* hwp) {
     if(!PREF_BO_ON)
         return;
     
@@ -140,11 +108,13 @@ void pref_bo_init(HWP* hwp) {
 }
 
 void pref_bo_ul1_train(Addr lineAddr, Addr loadPC, Flag pref_hit) {
+    
     if(!PREF_BO_ON || !bo_pref)
         return;
 
     Mem_Req_Info req;
     req.addr = lineAddr;
+    // we can easily make above_req take Addr instead of Mem_Req_Info if we don't need the extra info 
     above_req(&req, bo_pref);
 }
 
@@ -174,7 +144,7 @@ void above_req(Mem_Req_Info* req, BO_Pref* bo_pref){
     Addr* access = access_rr_table(req->addr - d, bo_pref->rr_table); // placeholder needs implimentation 
 
     if(access){ //check if element is in rr table 
-        int access_index = get_access_index(access); // placeholder needs implimentation 
+        int access_index = get_access_index(access, bo_pref->score_table); // placeholder needs implimentation 
         // need to convert an accessed item from the recent requests table into a corresponding index in the score table 
         // unsure how to do this, need to check paper more closely for exactly how the score table is implimented in relation to the access table 
         incriminet_score(access_index, bo_pref->score_table); 
@@ -238,18 +208,63 @@ RR_Table* init_rr_table(HashFunction hash_function){
     return rr_table; 
 }
 
+
+
+
+static bool isPrimeFactor(int n) {
+    if(n <= 1) return FALSE;
+    for(int i = 2; i * i <= n; i++) {
+        if(n % i == 0) return FALSE;
+    }
+    return TRUE;
+}
+
+static bool hasOnlySmallPrimes(int n) {
+    if(n <= 1) return FALSE;
+    
+    int temp = n;
+    for(int i = 2; i <= temp; i++) {
+        if(temp % i == 0) {
+            if(isPrimeFactor(i) && i > PREF_BO_PF_MAX) {
+                return FALSE;
+            }
+            while(temp % i == 0) {
+                temp /= i;
+            }
+        }
+    }
+    return TRUE;
+}
+
+uns16* generate_offset_list() { // mine and max offset should probably be params that are just accessed here instead of function inputs 
+    int count = 0;
+    uns16* offset_list = calloc(PREF_BO_OFFSET_LIST_SIZE, sizeof(uns16));
+    for(int i = PREF_BO_OFFSET_MIN; i <= PREF_BO_OFFSET_MAX; i++) {
+        if(hasOnlySmallPrimes(i)) {
+            ASSERT(0, count < PREF_BO_OFFSET_LIST_SIZE);
+            offset_list[count++] = i;
+        }
+    }
+    ASSERT(0, count == PREF_BO_OFFSET_LIST_SIZE);  
+    return offset_list; 
+}
+
 Score_Table* init_score_table(int table_entry_count){
     Score_Table* score_table; 
     score_table->table = (Score_Table_Entry**)calloc(table_entry_count, sizeof(Score_Table_Entry*));
     score_table->table_size = table_entry_count; 
     score_table->highest_score_index = 0;  
     score_table->highest_score_index = 0;
+    uns16* offset_list = generate_offset_list();
     for(int i; i < table_entry_count; i++){
-        score_table->table[i] = init_score_table_entry(i); 
+        score_table->table[i] = init_score_table_entry(offset_list[i]); 
     }
+    free(offset_list); // de-allocate memory from offset list to avoid memory leak, not sure this is the correct function to use for that tho ngl 
     return score_table; 
 
 }
+
+
 
 // initializes score table entry with a score and an offset, both of which are set to 0 at initialization. 
 // 1 2 3 4 5 6 8 9 10 12 15 16 18 20 24 25 27 30 32 36 40 45
@@ -321,15 +336,17 @@ Addr* insert_rr_table(Addr req, RR_Table* rr_table) {
 } 
 
 Addr pick_d(Score_Table* score_table, uns round_index) {
-    return offset_list[round_index % PREF_BO_OFFSET_LIST_SIZE];
+    return score_table->table[round_index % PREF_BO_OFFSET_LIST_SIZE]->offset;
 }
 
-int get_access_index(Addr* access) {
+
+// little confused on how this works, may be a thing we want to pay attention to when testing 
+int get_access_index(Addr* access, Score_Table* score_table) {
     if(!access) return -1;
     
-    Addr offset = *access;
+    Addr offset = &access;
     for(int i = 0; i < PREF_BO_OFFSET_LIST_SIZE; i++) {
-        if(offset_list[i] == offset)
+        if(score_table->table[i]->offset == offset)
             return i;
     }
     return -1;
