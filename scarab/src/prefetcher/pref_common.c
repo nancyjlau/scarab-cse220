@@ -59,6 +59,7 @@
 #include "prefetcher/pref_markov.h"
 #include "prefetcher/pref_phase.h"
 #include "statistics.h"
+#include "pref_bo.h"
 /**************************************************************************************
  * Usage Notes
  *

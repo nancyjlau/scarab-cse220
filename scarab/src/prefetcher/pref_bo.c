@@ -69,7 +69,7 @@ if(num_epsides > MAXEPISODES || cur_best_d.score >= MAXSCORE){
 #include "prefetcher/pref_common.h"
 #include "prefetcher/stream_pref.h"
 #include "statistics.h"
-#include "prefetcher/best_offset/pref_bo.param.h"
+#include "prefetcher/pref_bo.param.h"
 
 #include "cmp_model.h"
 #include "prefetcher/l2l1pref.h"
@@ -77,7 +77,7 @@ if(num_epsides > MAXEPISODES || cur_best_d.score >= MAXSCORE){
 #include "libs/port_lib.h"
 
 /// globals /// 
-static BO_Pref* bo_pref = NULL;
+static BO_Prefetchers bo_cores;
 typedef uns8 (*HashFunction)(Addr); //make sure input type is correct for when we actually impliment this 
 
 // dynamically generate offset list ??
@@ -98,36 +98,38 @@ void end_learning_phase(BO_Pref*);
 // based on the stuff in pref_phase.c try to connect this file to Scarab stuff
 // pref_bo_init is for when scarab initizalized the prefetchers and set up the structures
 // for the three functions below this for scarab to call on different cache events
-void init_global_bo_pref(HWP* hwp) {
+void pref_bo_init(HWP* hwp) {
     if(!PREF_BO_ON)
         return;
-    
-    bo_pref = init_bo_pref(PREF_BO_OFFSET_LIST_SIZE, hash_function);
-    bo_pref->hwp_info = hwp->hwp_info;
-    bo_pref->hwp_info->enabled = TRUE;
+    bo_cores.bo_pref_core = malloc(sizeof(BO_Pref) * NUM_CORES);
+    for(uns8 proc_id = 0; proc_id < NUM_CORES; proc_id++){
+        BO_Pref* bo_pref = init_bo_pref(&bo_cores.bo_pref_core[proc_id]);
+        bo_pref->hwp_info = hwp->hwp_info;
+        
+    }
+    hwp->hwp_info->enabled = TRUE;
 }
 
-void pref_bo_ul1_train(Addr lineAddr, Addr loadPC, Flag pref_hit) {
+void pref_bo_ul1_train(uns8 proc_id, Addr lineAddr, Addr loadPC, Flag pref_hit) {
     
-    if(!PREF_BO_ON || !bo_pref)
-        return;
 
     Mem_Req_Info req;
     req.addr = lineAddr;
     // we can easily make above_req take Addr instead of Mem_Req_Info if we don't need the extra info 
-    above_req(&req, bo_pref);
+    above_req(&req, &bo_cores.bo_pref_core[proc_id]);
 }
 
 void pref_bo_ul1_miss(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hist) {
-    pref_bo_ul1_train(lineAddr, loadPC, FALSE);
+    pref_bo_ul1_train(proc_id, lineAddr, loadPC, FALSE);
 }
 
 void pref_bo_ul1_prefhit(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hist) {
-    pref_bo_ul1_train(lineAddr, loadPC, TRUE);
+    pref_bo_ul1_train(proc_id, lineAddr, loadPC, TRUE);
 }
 
 void pref_bo_ul1_hit(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hist) {
     // (based on the paper) no training on regular hits
+    send_request(proc_id, lineAddr, loadPC, global_hist); 
 }
 
 void above_req(Mem_Req_Info* req, BO_Pref* bo_pref){ 
@@ -171,17 +173,21 @@ void below_receive(Pref_Req_Info* req, BO_Pref* bo_pref) {
     // need to make sure the hash table REPLACES on 
 }
 
-Pref_Req_Info* send_bo_prefetch(Mem_Req_Info* req, BO_Pref* bo_pref){ // this is purely a placeholder/ theoretical, we need to figure out how the prefetching actually works
+
+//  bo_get_pref_addr(line_index, pref_stream->bo_pref, pref_stream->hwp_info->id);
+void send_request(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hist){ // this is purely a placeholder/ theoretical, we need to figure out how the prefetching actually works
 // what this SHOULD do is send/ make a prefetch request for X + D where D is the learned offset and X is the current request 
     if(!PREF_BO_ON) { 
         return; 
     }
-    Pref_Req_Info* req; 
-    // build mem request 
-    req->addr = req->addr + bo_pref->best_offset; 
-    // should look SOMETHING like this. Really dont understand how the prefetching system works rn ;( 
-    return req; 
+    Pref_Mem_Req* req; 
+    Addr new_addr = req + bo_cores.bo_pref_core[proc_id].best_offset;
+    // Flag pref_addto_ul1req_queue(uns8 proc_id, Addr line_index, uns8 prefetcher_id)
+    // more handling needs to happen here 
+    // Also, looking at the code for other prefetchers, it looks like we'll want to have an array of size (num cores) of prefetchers, and access the correct prefetcher based on procid 
+    pref_addto_ul1req_queue(proc_id, new_addr, bo_cores.bo_pref_core[proc_id].hwp_info->id); 
 }
+
 void end_learning_phase(BO_Pref* bo_pref){
     replace_best_offset(bo_pref); 
     bo_pref->round_count = 0; 
@@ -290,10 +296,9 @@ Addr entry_index_to_offset(offset) {
 
 
 // Calls all the other init functions to build the full BO_Pref struct 
-BO_Pref* init_bo_pref(int table_entry_count, HashFunction hash_function){ //
-    BO_Pref* bo_pref; 
+BO_Pref* init_bo_pref(BO_Pref* bo_pref){ //
     bo_pref->rr_table = init_rr_table(hash_function);
-    bo_pref->score_table = init_score_table(table_entry_count); 
+    bo_pref->score_table = init_score_table(PREF_BO_OFFSET_LIST_SIZE); 
     bo_pref->round_count = 0; 
     bo_pref->score_max = PREF_BO_SCORE_MAX; 
     bo_pref->round_max = PREF_BO_ROUND_MAX;   

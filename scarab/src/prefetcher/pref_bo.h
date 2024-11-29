@@ -39,5 +39,13 @@ typedef struct BO_Pref_Struct{
     HWP_Info* hwp_info; // CHECK THE TYPE ON THIS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 } BO_Pref;  
 
+typedef struct{
+  BO_Pref* bo_pref_core;
+} BO_Prefetchers;
+
+void pref_bo_init(HWP*);
+void pref_bo_ul1_miss(uns8, Addr, Addr, uns32);
+void pref_bo_ul1_prefhit(uns8, Addr, Addr, uns32);
+void pref_bo_ul1_hit(uns8, Addr, Addr, uns32);
 
 #endif
