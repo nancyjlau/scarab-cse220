@@ -90,9 +90,9 @@ Score_Table_Entry* init_score_table_entry(int);
 
 
 /* INTERFACE HEADERS */
-void pref_bo_ul1_miss(uns8, Addr, Addr, uns32);
-void pref_bo_ul1_prefhit(uns8, Addr, Addr, uns32);
-void pref_bo_ul1_hit(uns8, Addr, Addr, uns32);
+void pref_bo_umlc_miss(uns8, Addr, Addr, uns32);
+void pref_bo_umlc_prefhit(uns8, Addr, Addr, uns32);
+void pref_bo_umlc_hit(uns8, Addr, Addr, uns32);
 void send_request(uns8, Addr, Addr, uns32);
 void below_receive(uns8, Addr); 
 
@@ -128,6 +128,13 @@ void above_req(Mem_Req_Info*, BO_Pref*); // This function takes mem request and
 void pref_bo_init(HWP* hwp) {
     if(!PREF_BO_ON)
         return;
+
+    ASSERT(0, MLC_PRESENT); 
+    DEBUG(0, "Initializing BO prefetcher for UMLC");
+
+    // configure as mid-level prefetcher
+    hwp->hwp_type = PREF_TO_UMLC;
+
     bo_cores.bo_pref_core = malloc(sizeof(BO_Pref) * NUM_CORES);
     for(uns8 proc_id = 0; proc_id < NUM_CORES; proc_id++){
         BO_Pref* bo_pref = init_bo_pref(&bo_cores.bo_pref_core[proc_id]);
@@ -196,26 +203,25 @@ Score_Table_Entry* init_score_table_entry(int offset){ // still need to check of
 
 
 /* INTERFACE */
-
-void pref_bo_ul1_miss(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hist) {
-    pref_bo_ul1_train(proc_id, lineAddr, loadPC, FALSE);
+void pref_bo_umlc_miss(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hist) {
+    DEBUG(proc_id, "BO UMLC miss - addr: %llx pc: %llx", lineAddr, loadPC);
+    pref_bo_umlc_train(proc_id, lineAddr, loadPC, FALSE); 
     if(bo_cores.bo_pref_core[proc_id].on) {
-        send_request(proc_id, lineAddr, loadPC, global_hist); 
+        send_request(proc_id, lineAddr, loadPC, global_hist);
     }
 }
 
-
-void pref_bo_ul1_prefhit(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hist) {
-    pref_bo_ul1_train(proc_id, lineAddr, loadPC, TRUE);
+void pref_bo_umlc_prefhit(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hist) {
+    DEBUG(proc_id, "BO UMLC pref hit - addr: %llx pc: %llx", lineAddr, loadPC);
+    pref_bo_umlc_train(proc_id, lineAddr, loadPC, TRUE);
     if(bo_cores.bo_pref_core[proc_id].on) {
-        send_request(proc_id, lineAddr, loadPC, global_hist); 
+        send_request(proc_id, lineAddr, loadPC, global_hist);
     }
 }
 
-
-void pref_bo_ul1_hit(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hist) {
-    // (based on the paper) no training on regular hits
-
+void pref_bo_umlc_hit(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hist) {
+    DEBUG(proc_id, "BO UMLC hit - addr: %llx pc: %llx", lineAddr, loadPC);
+    // no training on regular hits according to the paper
 }
 
 
@@ -233,7 +239,16 @@ void send_request(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hist){ 
     // Flag pref_addto_ul1req_queue(uns8 proc_id, Addr line_index, uns8 prefetcher_id)
     // more handling needs to happen here 
     // Also, looking at the code for other prefetchers, it looks like we'll want to have an array of size (num cores) of prefetchers, and access the correct prefetcher based on procid 
-    pref_addto_ul1req_queue(proc_id, new_addr, bo_cores.bo_pref_core[proc_id].hwp_info->id); 
+    //
+    // idk what im doing ... but send to umlc instead of ul1
+    Addr line_index = new_addr >> LOG2(DCACHE_LINE_SIZE);
+    
+    // also i have no idea if the debug stuff will show up or not
+    DEBUG(proc_id, "BO sending UMLC prefetch - addr: %llx offset: %d", 
+          new_addr, bo_cores.bo_pref_core[proc_id].best_offset);
+          
+    pref_addto_umlc_req_queue(proc_id, line_index, 
+                             bo_cores.bo_pref_core[proc_id].hwp_info->id);
 }
 
 
@@ -366,7 +381,7 @@ void replace_best_offset(BO_Pref* bo_pref){
 }
 
 
-void pref_bo_ul1_train(uns8 proc_id, Addr lineAddr, Addr loadPC, Flag pref_hit) {
+void pref_bo_umlc_train(uns8 proc_id, Addr lineAddr, Addr loadPC, Flag pref_hit) {
     
 
     Mem_Req_Info req;
