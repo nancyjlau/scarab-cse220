@@ -46,8 +46,11 @@ typedef struct{
 
 /* PUBLIC INTERFACE */
 void pref_bo_init(HWP*);
-void pref_bo_ul1_miss(uns8, Addr, Addr, uns32);
-void pref_bo_ul1_prefhit(uns8, Addr, Addr, uns32);
-void pref_bo_ul1_hit(uns8, Addr, Addr, uns32);
+void pref_bo_umlc_miss(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hist);
+void pref_bo_umlc_prefhit(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hist);
+void pref_bo_umlc_hit(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hist);
+void pref_bo_umlc_train(uns8 proc_id, Addr lineAddr, Addr loadPC, Flag pref_hit);
+void below_receive(uns8 proc_id, Addr addr);
+void send_request(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hist);
 
 #endif
