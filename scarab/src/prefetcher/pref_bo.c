@@ -94,6 +94,7 @@ void pref_bo_ul1_miss(uns8, Addr, Addr, uns32);
 void pref_bo_ul1_prefhit(uns8, Addr, Addr, uns32);
 void pref_bo_ul1_hit(uns8, Addr, Addr, uns32);
 void send_request(uns8, Addr, Addr, uns32);
+void below_receive(uns8, Addr); 
 
 
 /* OFFSET LIST GENERATION HEADERS*/
@@ -117,7 +118,6 @@ void end_learning_phase(BO_Pref*);
 void replace_best_offset(BO_Pref*);
 void pref_bo_ul1_train(uns8, Addr, Addr, Flag);
 void above_req(Mem_Req_Info*, BO_Pref*); // This function takes mem request and 
-void below_receive(Pref_Req_Info*, BO_Pref*);
 
 
 /* INIT FUNCTIONS */
@@ -216,6 +216,13 @@ void pref_bo_ul1_prefhit(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_
 void pref_bo_ul1_hit(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hist) {
     // (based on the paper) no training on regular hits
 
+}
+
+
+void below_receive(uns8 proc_id, Addr line_addr) { 
+    BO_Pref* bo_pref = &bo_cores.bo_pref_core[proc_id]; 
+    insert_rr_table(line_addr - bo_pref->best_offset, bo_pref->rr_table);
+    // need to make sure the hash table REPLACES on 
 }
 
 
@@ -402,7 +409,3 @@ void above_req(Mem_Req_Info* req, BO_Pref* bo_pref){
 }
 
 
-void below_receive(Pref_Req_Info* req, BO_Pref* bo_pref) { 
-    insert_rr_table(req->loadPC - bo_pref->best_offset, bo_pref->rr_table);
-    // need to make sure the hash table REPLACES on 
-}
