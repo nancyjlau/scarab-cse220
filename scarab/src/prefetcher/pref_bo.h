@@ -9,7 +9,7 @@ typedef uns8 (*HashFunction)(Addr); //make sure input type is correct for when w
 
 
 typedef struct RR_Table_Struct{ 
-    Hash_Table* hashmap; // may replace this with a hashmap... but it needs to have a FINITE size defined at startup. I'm not certain the hashlib implimentation works for finite sizes. 
+    Addr* hashmap; // may replace this with a hashmap... but it needs to have a FINITE size defined at startup. I'm not certain the hashlib implimentation works for finite sizes. 
     // actually im goofy af, the hash function will set the hashmap size lol 
     // hash function implimentation: For 256-entry RR table, XOR the 8 least significant line address bits with the next 8 bits to obtain table index. For 12-bit tags, skip the 8 least significant line address bits and extract the next 12 bits. 
     // we may want to hard bake the RR table to be size 256... since we would need to dynamically create new hashing functions for different sized RR tables otherwise. 
@@ -37,12 +37,14 @@ typedef struct BO_Pref_Struct{
     int score_max; 
     uns16 best_offset; //still need to check the offset dtype ;( 
     HWP_Info* hwp_info; // CHECK THE TYPE ON THIS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+    Flag on; 
 } BO_Pref;  
 
 typedef struct{
   BO_Pref* bo_pref_core;
 } BO_Prefetchers;
 
+/* PUBLIC INTERFACE */
 void pref_bo_init(HWP*);
 void pref_bo_ul1_miss(uns8, Addr, Addr, uns32);
 void pref_bo_ul1_prefhit(uns8, Addr, Addr, uns32);
