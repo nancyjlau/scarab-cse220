@@ -244,8 +244,9 @@ void send_request(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hist){ 
     Addr line_index = new_addr >> LOG2(DCACHE_LINE_SIZE);
     
     // also i have no idea if the debug stuff will show up or not
-    DEBUG(proc_id, "BO sending UMLC prefetch - addr: %llx offset: %d", 
-          new_addr, bo_cores.bo_pref_core[proc_id].best_offset);
+    DEBUG(proc_id, "BO sending UMLC prefetch - addr: %llx offset: %d",      new_addr, bo_cores.bo_pref_core[proc_id].best_offset);
+
+    STAT_EVENT(proc_id, PREF_BO_PREFETCH_SENT); // track the sent prefetches
           
     pref_addto_umlc_req_queue(proc_id, line_index, 
                              bo_cores.bo_pref_core[proc_id].hwp_info->id);
@@ -299,8 +300,10 @@ uns16* generate_offset_list() { // min and max offset should probably be params 
 
 Addr* access_rr_table(Addr req, RR_Table* rr_table) { 
     if(rr_table->hashmap[rr_table->hash_function(req)] != req) {
+        STAT_EVENT(proc_id, PREF_BO_RR_TABLE_MISSES);
         return; 
     }
+    STAT_EVENT(proc_id, PREF_BO_RR_TABLE_HITS);
     return &(rr_table->hashmap[rr_table->hash_function(req)]);
 } 
 
@@ -313,6 +316,7 @@ Flag insert_rr_table(Addr req, RR_Table* rr_table) {
         changed = FALSE; 
     }
     rr_table->hashmap[rr_table->hash_function(req)] = req; 
+    STAT_EVENT(proc_id, PREF_BO_RR_TABLE_UPDATES);
     return changed; 
 } 
 
@@ -402,6 +406,7 @@ void above_req(Mem_Req_Info* req, BO_Pref* bo_pref){
     // if addr - d is in the rr table, incriment the score for the offset correlating with current round index. 
     if(access){ 
         incriminet_score(bo_pref->round_index, bo_pref->score_table); 
+        STAT_EVENT(proc_id, PREF_BO_USEFUL_PREFETCHES);
     }
 
     // incriments round index. Round index used to determine d, and position within a round. 
