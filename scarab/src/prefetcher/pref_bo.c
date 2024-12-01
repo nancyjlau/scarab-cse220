@@ -224,10 +224,24 @@ void pref_bo_umlc_hit(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_his
     // no training on regular hits according to the paper
 }
 
+void pref_bo_on_cache_fill(uns8 proc_id, Addr addr, Flag is_prefetch) {
+    if (!PREF_BO_ON)
+        return;
+        
+    BO_Pref* bo_pref = &bo_cores.bo_pref_core[proc_id];
+    
+    if (is_prefetch) {
+        DEBUG(proc_id, "BO prefetch completed addr: %llx", addr);
+        below_receive(proc_id, addr);
+    }
+}
 
 void below_receive(uns8 proc_id, Addr line_addr) { 
-    BO_Pref* bo_pref = &bo_cores.bo_pref_core[proc_id]; 
-    insert_rr_table(line_addr - bo_pref->best_offset, bo_pref->rr_table);
+    BO_Pref* bo_pref = &bo_cores.bo_pref_core[proc_id];
+    if (!bo_pref->on)
+        return;
+    
+    insert_rr_table(line_addr - bo_pref->best_offset, bo_pref->rr_table, proc_id);
     // need to make sure the hash table REPLACES on 
 }
 
@@ -297,29 +311,26 @@ uns16* generate_offset_list() { // min and max offset should probably be params 
 
 
 /* RECENT REQUESTS TABLE */
-
-Addr* access_rr_table(Addr req, RR_Table* rr_table) { 
+Addr* access_rr_table(Addr req, RR_Table* rr_table, uns8 proc_id) {
     if(rr_table->hashmap[rr_table->hash_function(req)] != req) {
         STAT_EVENT(proc_id, PREF_BO_RR_TABLE_MISSES);
-        return; 
+        return NULL;
     }
     STAT_EVENT(proc_id, PREF_BO_RR_TABLE_HITS);
     return &(rr_table->hashmap[rr_table->hash_function(req)]);
-} 
-
+}
 
 // just hashes addr and sets new value 
 // returns flag if the element was changed or remained the same. 
-Flag insert_rr_table(Addr req, RR_Table* rr_table) { 
+Flag insert_rr_table(Addr req, RR_Table* rr_table, uns8 proc_id) {
     Flag changed = TRUE;
-    if(access_rr_table(req, rr_table)){
-        changed = FALSE; 
+    if(access_rr_table(req, rr_table, proc_id)) {
+        changed = FALSE;
     }
-    rr_table->hashmap[rr_table->hash_function(req)] = req; 
+    rr_table->hashmap[rr_table->hash_function(req)] = req;
     STAT_EVENT(proc_id, PREF_BO_RR_TABLE_UPDATES);
-    return changed; 
-} 
-
+    return changed;
+}
 
 uns8 hash_function(Addr mem_req) { // take a memory address (make sure to take the correct data type) and xor 8 least significant against next 8 bits. Figure out how to do that later... 
     // extract first 8 bits 

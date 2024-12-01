@@ -53,4 +53,6 @@ void pref_bo_umlc_train(uns8 proc_id, Addr lineAddr, Addr loadPC, Flag pref_hit)
 void below_receive(uns8 proc_id, Addr addr);
 void send_request(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hist);
 
+void pref_bo_on_cache_fill(uns8 proc_id, Addr addr, Flag is_prefetch);
+
 #endif
