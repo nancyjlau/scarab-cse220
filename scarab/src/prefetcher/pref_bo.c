@@ -92,9 +92,10 @@ Score_Table_Entry* init_score_table_entry(int);
 /* INTERFACE HEADERS */
 void pref_bo_umlc_miss(uns8, Addr, Addr, uns32);
 void pref_bo_umlc_prefhit(uns8, Addr, Addr, uns32);
-void pref_bo_umlc_hit(uns8, Addr, Addr, uns32);
+void pref_bo_umlc_hit(uns8, Addr, Addr, uns32); 
 void send_request(uns8, Addr, Addr, uns32);
 void below_receive(uns8, Addr); 
+void pref_bo_on_cache_fill(uns8, Addr, Flag);
 
 
 /* OFFSET LIST GENERATION HEADERS*/
@@ -103,8 +104,8 @@ static bool hasOnlySmallPrimes(int);
 uns16* generate_offset_list(); 
 
 /* RECENT REQUESTS TABLE HEADERS */
-Addr* access_rr_table(Addr, RR_Table*);
-Flag insert_rr_table(Addr, RR_Table*);
+Addr* access_rr_table(Addr, RR_Table*, uns8);
+Flag insert_rr_table(Addr, RR_Table*, uns8);
 uns8 hash_function(Addr);
 
 /* SCORE + OFFSET TABLE HEADERS */
@@ -116,8 +117,8 @@ void reset_scores(Score_Table*);
 /* OFFSET LEARNING HEADERS */
 void end_learning_phase(BO_Pref*);
 void replace_best_offset(BO_Pref*);
-void pref_bo_ul1_train(uns8, Addr, Addr, Flag);
-void above_req(Mem_Req_Info*, BO_Pref*); // This function takes mem request and 
+void pref_bo_umlc_train(uns8, Addr, Addr, Flag);
+void above_req(Mem_Req_Info*, BO_Pref*, uns8); // This function takes mem request and 
 
 
 /* INIT FUNCTIONS */
@@ -203,6 +204,7 @@ Score_Table_Entry* init_score_table_entry(int offset){ // still need to check of
 
 
 /* INTERFACE */
+
 void pref_bo_umlc_miss(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hist) {
     DEBUG(proc_id, "BO UMLC miss - addr: %llx pc: %llx", lineAddr, loadPC);
     pref_bo_umlc_train(proc_id, lineAddr, loadPC, FALSE); 
@@ -210,6 +212,7 @@ void pref_bo_umlc_miss(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hi
         send_request(proc_id, lineAddr, loadPC, global_hist);
     }
 }
+
 
 void pref_bo_umlc_prefhit(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hist) {
     DEBUG(proc_id, "BO UMLC pref hit - addr: %llx pc: %llx", lineAddr, loadPC);
@@ -219,10 +222,12 @@ void pref_bo_umlc_prefhit(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global
     }
 }
 
+
 void pref_bo_umlc_hit(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hist) {
     DEBUG(proc_id, "BO UMLC hit - addr: %llx pc: %llx", lineAddr, loadPC);
     // no training on regular hits according to the paper
 }
+
 
 void pref_bo_on_cache_fill(uns8 proc_id, Addr addr, Flag is_prefetch) {
     if (!PREF_BO_ON)
@@ -235,6 +240,7 @@ void pref_bo_on_cache_fill(uns8 proc_id, Addr addr, Flag is_prefetch) {
         below_receive(proc_id, addr);
     }
 }
+
 
 void below_receive(uns8 proc_id, Addr line_addr) { 
     BO_Pref* bo_pref = &bo_cores.bo_pref_core[proc_id];
@@ -311,6 +317,7 @@ uns16* generate_offset_list() { // min and max offset should probably be params 
 
 
 /* RECENT REQUESTS TABLE */
+
 Addr* access_rr_table(Addr req, RR_Table* rr_table, uns8 proc_id) {
     if(rr_table->hashmap[rr_table->hash_function(req)] != req) {
         STAT_EVENT(proc_id, PREF_BO_RR_TABLE_MISSES);
@@ -319,6 +326,7 @@ Addr* access_rr_table(Addr req, RR_Table* rr_table, uns8 proc_id) {
     STAT_EVENT(proc_id, PREF_BO_RR_TABLE_HITS);
     return &(rr_table->hashmap[rr_table->hash_function(req)]);
 }
+
 
 // just hashes addr and sets new value 
 // returns flag if the element was changed or remained the same. 
@@ -331,6 +339,7 @@ Flag insert_rr_table(Addr req, RR_Table* rr_table, uns8 proc_id) {
     STAT_EVENT(proc_id, PREF_BO_RR_TABLE_UPDATES);
     return changed;
 }
+
 
 uns8 hash_function(Addr mem_req) { // take a memory address (make sure to take the correct data type) and xor 8 least significant against next 8 bits. Figure out how to do that later... 
     // extract first 8 bits 
@@ -402,17 +411,17 @@ void pref_bo_umlc_train(uns8 proc_id, Addr lineAddr, Addr loadPC, Flag pref_hit)
     Mem_Req_Info req;
     req.addr = lineAddr;
     // we can easily make above_req take Addr instead of Mem_Req_Info if we don't need the extra info 
-    above_req(&req, &bo_cores.bo_pref_core[proc_id]);
+    above_req(&req, &bo_cores.bo_pref_core[proc_id], proc_id);
 }
 
 
-void above_req(Mem_Req_Info* req, BO_Pref* bo_pref){ 
+void above_req(Mem_Req_Info* req, BO_Pref* bo_pref, uns8 proc_id){ 
 
     // select offset based on round_index  
     Addr d = pick_d(bo_pref->score_table, bo_pref->round_index); 
 
     // access recent requests table 
-    Addr* access = access_rr_table(req->addr - d, bo_pref->rr_table); 
+    Addr* access = access_rr_table(req->addr - d, bo_pref->rr_table, proc_id); 
 
     // if addr - d is in the rr table, incriment the score for the offset correlating with current round index. 
     if(access){ 
@@ -438,5 +447,6 @@ void above_req(Mem_Req_Info* req, BO_Pref* bo_pref){
     } 
 
 }
+
 
 
