@@ -80,8 +80,10 @@ if(num_epsides > MAXEPISODES || cur_best_d.score >= MAXSCORE){
 static BO_Prefetchers bo_cores;
 typedef uns8 (*HashFunction)(Addr); //make sure input type is correct for when we actually impliment this 
 
+#define DEBUG(proc_id, args...) _DEBUG(proc_id, DEBUG_PREF, ##args)
 
-/* INIT HEADERS */
+
+/* INIT PROTOTYPES */
 void pref_bo_init(HWP*);
 BO_Pref* init_bo_pref(BO_Pref*);
 RR_Table* init_rr_table(HashFunction); 
@@ -89,7 +91,7 @@ Score_Table* init_score_table(int);
 Score_Table_Entry* init_score_table_entry(int);
 
 
-/* INTERFACE HEADERS */
+/* INTERFACE PROTOTYPES */
 void pref_bo_umlc_miss(uns8, Addr, Addr, uns32);
 void pref_bo_umlc_prefhit(uns8, Addr, Addr, uns32);
 void pref_bo_umlc_hit(uns8, Addr, Addr, uns32); 
@@ -98,23 +100,23 @@ void below_receive(uns8, Addr);
 void pref_bo_on_cache_fill(uns8, Addr, Flag);
 
 
-/* OFFSET LIST GENERATION HEADERS*/
+/* OFFSET LIST GENERATION PROTOTYPES*/
 static bool isPrimeFactor(int);
 static bool hasOnlySmallPrimes(int);
-uns16* generate_offset_list(); 
+static Addr* generate_offset_list(void); 
 
-/* RECENT REQUESTS TABLE HEADERS */
+/* RECENT REQUESTS TABLE PROTOTYPES */
 Addr* access_rr_table(Addr, RR_Table*, uns8);
 Flag insert_rr_table(Addr, RR_Table*, uns8);
 uns8 hash_function(Addr);
 
-/* SCORE + OFFSET TABLE HEADERS */
+/* SCORE + OFFSET TABLE PROTOTYPES */
 void incriminet_score(int, Score_Table*);
 Addr pick_d(Score_Table*, uns);
 void reset_scores(Score_Table*);
 
 
-/* OFFSET LEARNING HEADERS */
+/* OFFSET LEARNING PROTOTYPES */
 void end_learning_phase(BO_Pref*);
 void replace_best_offset(BO_Pref*);
 void pref_bo_umlc_train(uns8, Addr, Addr, Flag);
@@ -174,7 +176,7 @@ Score_Table* init_score_table(int table_entry_count){
     score_table->table_size = table_entry_count; 
     score_table->highest_score_index = 0;  
     score_table->highest_score_index = 0;
-    uns16* offset_list = generate_offset_list();
+    Addr* offset_list = generate_offset_list();
     for(int i; i < table_entry_count; i++){
         score_table->table[i] = init_score_table_entry(offset_list[i]); 
     }
@@ -229,11 +231,12 @@ void pref_bo_umlc_hit(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_his
 }
 
 
+// in interface: takes input when the cache recieves a 
 void pref_bo_on_cache_fill(uns8 proc_id, Addr addr, Flag is_prefetch) {
     if (!PREF_BO_ON)
         return;
         
-    BO_Pref* bo_pref = &bo_cores.bo_pref_core[proc_id];
+    //BO_Pref* bo_pref = &bo_cores.bo_pref_core[proc_id];
     
     if (is_prefetch) {
         DEBUG(proc_id, "BO prefetch completed addr: %llx", addr);
@@ -252,7 +255,7 @@ void below_receive(uns8 proc_id, Addr line_addr) {
 }
 
 
-//  bo_get_pref_addr(line_index, pref_stream->bo_pref, pref_stream->hwp_info->id);
+//  this is our "out" interface, which sends information to other sections of code. 
 void send_request(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hist){ // this is purely a placeholder/ theoretical, we need to figure out how the prefetching actually works
 // what this SHOULD do is send/ make a prefetch request for X + D where D is the learned offset and X is the current request 
     Addr new_addr = lineAddr + bo_cores.bo_pref_core[proc_id].best_offset;
@@ -302,9 +305,9 @@ static bool hasOnlySmallPrimes(int n) {
 }
 
 
-uns16* generate_offset_list() { // min and max offset should probably be params that are just accessed here instead of function inputs 
+static Addr* generate_offset_list() { // min and max offset should probably be params that are just accessed here instead of function inputs 
     int count = 0;
-    uns16* offset_list = calloc(PREF_BO_OFFSET_LIST_SIZE, sizeof(uns16));
+    Addr* offset_list = calloc(PREF_BO_OFFSET_LIST_SIZE, sizeof(Addr));
     for(int i = PREF_BO_OFFSET_MIN; i <= PREF_BO_OFFSET_MAX; i++) {
         if(hasOnlySmallPrimes(i)) {
             ASSERT(0, count < PREF_BO_OFFSET_LIST_SIZE);

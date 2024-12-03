@@ -2,8 +2,8 @@
 #define __PREF_BO__
 
 
-#include "globals/global_defs.h"
-#include "libs/hash_lib.h"
+#include "memory/mem_req.h"
+
 
 typedef uns8 (*HashFunction)(Addr); //make sure input type is correct for when we actually impliment this 
 
@@ -17,16 +17,16 @@ typedef struct RR_Table_Struct{
 
 } RR_Table;
 
+typedef struct Score_Table_Entry_Struct{
+    uns8 score; // may want more than 8bit here depending on what score max is... 
+    Addr offset; // USE CORRECT DATATYPE HERE!!! THIS IS A PLACEHOLDER 
+} Score_Table_Entry; 
+
 typedef struct Score_Table_Struct{
     int highest_score_index; 
     int table_size;  
     Score_Table_Entry** table; 
 } Score_Table; 
-
-typedef struct Score_Table_Entry_Struct{
-    uns8 score; // may want more than 8bit here depending on what score max is... 
-    uns16 offset; // USE CORRECT DATATYPE HERE!!! THIS IS A PLACEHOLDER 
-} Score_Table_Entry; 
 
 typedef struct BO_Pref_Struct{
     Score_Table* score_table; 
@@ -35,7 +35,7 @@ typedef struct BO_Pref_Struct{
     Counter round_index;
     int round_max; 
     int score_max; 
-    uns16 best_offset; //still need to check the offset dtype ;( 
+    Addr best_offset; //still need to check the offset dtype ;( 
     HWP_Info* hwp_info; // CHECK THE TYPE ON THIS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
     Flag on; 
 } BO_Pref;  
