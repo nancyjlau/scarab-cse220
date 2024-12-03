@@ -267,7 +267,7 @@ void send_request(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hist){ 
     Addr line_index = new_addr >> LOG2(DCACHE_LINE_SIZE);
     
     // also i have no idea if the debug stuff will show up or not
-    DEBUG(proc_id, "BO sending UMLC prefetch - addr: %llx offset: %d",      new_addr, bo_cores.bo_pref_core[proc_id].best_offset);
+    DEBUG(proc_id, "BO sending UMLC prefetch - addr: %llx offset: %llu",      new_addr, bo_cores.bo_pref_core[proc_id].best_offset);
 
     STAT_EVENT(proc_id, PREF_BO_PREFETCH_SENT); // track the sent prefetches
           
