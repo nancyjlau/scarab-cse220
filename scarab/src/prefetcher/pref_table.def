@@ -82,7 +82,7 @@ HWP pref_table [] = {
           pref_markov_umlc_miss,        		NULL,  	pref_markov_umlc_prefhit,   		
 	    pref_markov_ul1_miss, 		NULL,    pref_markov_ul1_prefhit  }, 
 
-	{ "bo",   PREF_TO_UL1,  		NULL,   		pref_bo_init,  	NULL,
+	{ "bo",   PREF_TO_UMLC,  		NULL,   		pref_bo_init,  	NULL,
                   NULL,
 	 	  NULL,  		NULL,         		NULL,
           pref_bo_umlc_miss,        		pref_bo_umlc_hit,  	pref_bo_umlc_prefhit,   		

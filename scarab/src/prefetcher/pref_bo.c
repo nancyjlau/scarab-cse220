@@ -135,9 +135,6 @@ void pref_bo_init(HWP* hwp) {
     ASSERT(0, MLC_PRESENT); 
     DEBUG(0, "Initializing BO prefetcher for UMLC");
 
-    // configure as mid-level prefetcher
-    hwp->hwp_type = PREF_TO_UMLC;
-
     bo_cores.bo_pref_core = malloc(sizeof(BO_Pref) * NUM_CORES);
     for(uns8 proc_id = 0; proc_id < NUM_CORES; proc_id++){
         BO_Pref* bo_pref = init_bo_pref(&bo_cores.bo_pref_core[proc_id]);
