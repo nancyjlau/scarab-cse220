@@ -284,12 +284,22 @@ void* cache_access(Cache* cache, Addr addr, Addr* line_addr, Flag update_repl) {
 
 void* cache_insert(Cache* cache, uns8 proc_id, Addr addr, Addr* line_addr,
                    Addr* repl_line_addr) {
+  void* result;
   if (cache->repl_policy >= REPL_VOID)
-    return cache_insert_strategy(cache, proc_id, addr, line_addr, repl_line_addr);
-
-  return cache_insert_replpos(cache, proc_id, addr, line_addr, repl_line_addr,
+    result = cache_insert_strategy(cache, proc_id, addr, line_addr, repl_line_addr);
+  else
+    result = cache_insert_replpos(cache, proc_id, addr, line_addr, repl_line_addr,
                               INSERT_REPL_DEFAULT, FALSE);
+
+  // notify best offset prefetcher of cache fill
+  if(cache->name && strstr(cache->name, "UMLC")) {
+    Flag is_prefetch = cache->entries[*line_addr][*repl_line_addr].RR_element;
+    pref_bo_on_cache_fill(proc_id, addr, is_prefetch);
+  }
+
+  return result;
 }
+
 /**************************************************************************************/
 /* cache_insert_replpos: returns a pointer to the data section of the new cache
    line.  Sets line_addr to the address of the first block of the new line.

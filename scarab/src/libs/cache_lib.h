@@ -194,6 +194,7 @@ const static Flag CACHE_DEBUG_ENABLE = FALSE; // To be Changed into DEBUG_PARA
 void  init_cache(Cache*, const char*, uns, uns, uns, uns, Repl_Policy);
 void* cache_access(Cache*, Addr, Addr*, Flag);
 void* cache_insert(Cache*, uns8, Addr, Addr*, Addr*);
+void pref_bo_on_cache_fill(uns8 proc_id, Addr addr, Flag is_prefetch);
 void* cache_insert_replpos(Cache* cache, uns8 proc_id, Addr addr,
                            Addr* line_addr, Addr* repl_line_addr,
                            Cache_Insert_Repl insert_repl_policy,
