@@ -22,4 +22,4 @@ DEF_PARAM(pref_bo_degree            , PREF_BO_DEGREE           , uns    , uns   
 DEF_PARAM(pref_bo_offset_min           , PREF_BO_OFFSET_MIN          , uns    , uns       , 1         ,      )
 DEF_PARAM(pref_bo_offset_max           , PREF_BO_OFFSET_MAX          , uns    , uns       , 256         ,      )
 DEF_PARAM(pref_bo_pf_max           , PREF_BO_PF_MAX          , uns    , uns       , 5         ,      )
-DEF_PARAM(pref_bo_offset_list_size           , PREF_BO_OFFSET_LIST_SIZE          , uns    , uns       , 52         ,      )
+DEF_PARAM(pref_bo_offset_list_size           , PREF_BO_OFFSET_LIST_SIZE          , uns    , uns       , 51         ,      )
