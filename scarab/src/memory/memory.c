@@ -4783,6 +4783,7 @@ Flag mlc_fill_line(Mem_Req* req) {
   } else {
     data = (MLC_Data*)cache_insert(&MLC(req->proc_id)->cache, req->proc_id,
                                    req->addr, &line_addr, &repl_line_addr);
+    pref_bo_on_cache_fill(req->proc_id, req->addr, FALSE);
   }
 
   if(req->type == MRT_WB_NODIRTY || req->type == MRT_WB) {

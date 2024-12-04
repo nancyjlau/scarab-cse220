@@ -10,9 +10,9 @@ DEF_PARAM(pref_bo_rr_size           , PREF_BO_RR_SIZE          , uns    , uns   
 DEF_PARAM(pref_bo_tag_bits          , PREF_BO_TAG_BITS         , uns    , uns       , 12          ,      )
 
 /* Learning Phase Parameters */
-DEF_PARAM(pref_bo_score_max         , PREF_BO_SCORE_MAX        , uns    , uns       , 31          ,      )
-DEF_PARAM(pref_bo_round_max         , PREF_BO_ROUND_MAX        , uns    , uns       , 100         ,      )
-DEF_PARAM(pref_bo_bad_score         , PREF_BO_BAD_SCORE        , uns    , uns       , 1           ,      )
+DEF_PARAM(pref_bo_score_max         , PREF_BO_SCORE_MAX        , uns    , uns       , 5          ,      )
+DEF_PARAM(pref_bo_round_max         , PREF_BO_ROUND_MAX        , uns    , uns       , 20         ,      )
+DEF_PARAM(pref_bo_bad_score         , PREF_BO_BAD_SCORE        , uns    , uns       , 0           ,      )
 
 /* Prefetch Control */
 DEF_PARAM(pref_bo_degree            , PREF_BO_DEGREE           , uns    , uns       , 1           ,      )

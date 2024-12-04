@@ -96,7 +96,7 @@ void pref_bo_umlc_miss(uns8, Addr, Addr, uns32);
 void pref_bo_umlc_prefhit(uns8, Addr, Addr, uns32);
 void pref_bo_umlc_hit(uns8, Addr, Addr, uns32); 
 void send_request(uns8, Addr, Addr, uns32);
-void below_receive(uns8, Addr); 
+void below_receive(uns8, Addr, Flag); 
 void pref_bo_on_cache_fill(uns8, Addr, Flag);
 
 
@@ -111,7 +111,7 @@ Flag insert_rr_table(Addr, RR_Table*, uns8);
 uns8 hash_function(Addr);
 
 /* SCORE + OFFSET TABLE PROTOTYPES */
-void incriminet_score(int, Score_Table*);
+void incriment_score(int, Score_Table*);
 Addr pick_d(Score_Table*, uns);
 void reset_scores(Score_Table*);
 
@@ -131,14 +131,16 @@ void above_req(Mem_Req_Info*, BO_Pref*, uns8); // This function takes mem reques
 void pref_bo_init(HWP* hwp) {
     if(!PREF_BO_ON)
         return;
-
+    
     ASSERT(0, MLC_PRESENT); 
     DEBUG(0, "Initializing BO prefetcher for UMLC");
 
     bo_cores.bo_pref_core = malloc(sizeof(BO_Pref) * NUM_CORES);
     for(uns8 proc_id = 0; proc_id < NUM_CORES; proc_id++){
+        printf("%i\n", NUM_CORES);
         BO_Pref* bo_pref = init_bo_pref(&bo_cores.bo_pref_core[proc_id]);
         bo_pref->hwp_info = hwp->hwp_info;
+        bo_pref->hwp_info->enabled = TRUE; 
         
     }
     hwp->hwp_info->enabled = TRUE;
@@ -152,7 +154,7 @@ BO_Pref* init_bo_pref(BO_Pref* bo_pref){ //
     bo_pref->round_count = 0; 
     bo_pref->score_max = PREF_BO_SCORE_MAX; 
     bo_pref->round_max = PREF_BO_ROUND_MAX;   
-    bo_pref->best_offset = 0; // unsure what initialization value should be for this  
+    bo_pref->best_offset = 1; // unsure what initialization value should be for this  
     bo_pref->on = TRUE; 
     return bo_pref;  
 }
@@ -209,6 +211,8 @@ void pref_bo_umlc_miss(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hi
     pref_bo_umlc_train(proc_id, lineAddr, loadPC, FALSE); 
     if(bo_cores.bo_pref_core[proc_id].on) {
         send_request(proc_id, lineAddr, loadPC, global_hist);
+    } else {
+        STAT_EVENT(proc_id, PREF_BO_TIMES_DISABLED);
     }
 }
 
@@ -218,6 +222,8 @@ void pref_bo_umlc_prefhit(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global
     pref_bo_umlc_train(proc_id, lineAddr, loadPC, TRUE);
     if(bo_cores.bo_pref_core[proc_id].on) {
         send_request(proc_id, lineAddr, loadPC, global_hist);
+    } else {
+        STAT_EVENT(proc_id, PREF_BO_TIMES_DISABLED);
     }
 }
 
@@ -230,24 +236,31 @@ void pref_bo_umlc_hit(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_his
 
 // in interface: takes input when the cache recieves a 
 void pref_bo_on_cache_fill(uns8 proc_id, Addr addr, Flag is_prefetch) {
+    
     if (!PREF_BO_ON)
         return;
         
     //BO_Pref* bo_pref = &bo_cores.bo_pref_core[proc_id];
     
+    
     if (is_prefetch) {
         DEBUG(proc_id, "BO prefetch completed addr: %llx", addr);
-        below_receive(proc_id, addr);
     }
+    below_receive(proc_id, addr, is_prefetch);
 }
 
 
-void below_receive(uns8 proc_id, Addr line_addr) { 
+void below_receive(uns8 proc_id, Addr line_addr, Flag is_prefetch) { 
     BO_Pref* bo_pref = &bo_cores.bo_pref_core[proc_id];
-    if (!bo_pref->on)
-        return;
     
-    insert_rr_table(line_addr - bo_pref->best_offset, bo_pref->rr_table, proc_id);
+    if (!bo_pref->on){
+        STAT_EVENT(proc_id, PREF_BO_RR_TABLE_UPDATES);
+        insert_rr_table(line_addr, bo_pref->rr_table, proc_id);
+    }
+    if(is_prefetch){
+        STAT_EVENT(proc_id, PREF_BO_RR_TABLE_UPDATES);
+        insert_rr_table(line_addr - bo_pref->best_offset, bo_pref->rr_table, proc_id);
+    }
     // need to make sure the hash table REPLACES on 
 }
 
@@ -255,13 +268,13 @@ void below_receive(uns8 proc_id, Addr line_addr) {
 //  this is our "out" interface, which sends information to other sections of code. 
 void send_request(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hist){ // this is purely a placeholder/ theoretical, we need to figure out how the prefetching actually works
 // what this SHOULD do is send/ make a prefetch request for X + D where D is the learned offset and X is the current request 
-    Addr new_addr = lineAddr + bo_cores.bo_pref_core[proc_id].best_offset;
+    Addr new_addr = lineAddr + bo_cores.bo_pref_core[proc_id].best_offset; // >> LOG2(DCACHE_LINE_SIZE)
     // Flag pref_addto_ul1req_queue(uns8 proc_id, Addr line_index, uns8 prefetcher_id)
     // more handling needs to happen here 
     // Also, looking at the code for other prefetchers, it looks like we'll want to have an array of size (num cores) of prefetchers, and access the correct prefetcher based on procid 
     //
     // idk what im doing ... but send to umlc instead of ul1
-    Addr line_index = new_addr >> LOG2(DCACHE_LINE_SIZE);
+    Addr line_index = new_addr;
     
     // also i have no idea if the debug stuff will show up or not
     DEBUG(proc_id, "BO sending UMLC prefetch - addr: %llx offset: %llu",      new_addr, bo_cores.bo_pref_core[proc_id].best_offset);
@@ -354,12 +367,14 @@ uns8 hash_function(Addr mem_req) { // take a memory address (make sure to take t
 
 /* SCORE + OFFSET TABLE */
 
-void incriminet_score(int index, Score_Table* score_table){ 
+void incriment_score(int index, Score_Table* score_table){ 
     // incriment score of index 
     score_table->table[index]->score++; 
+    
 
     // updates highest score index if updated score is new highest 
     if(score_table->table[index]->score > score_table->table[score_table->highest_score_index]->score) {
+        
         score_table->highest_score_index = index;  
     }
 }
@@ -397,6 +412,7 @@ void end_learning_phase(BO_Pref* bo_pref){
     } else {
         bo_pref->on = TRUE; 
     }
+    STAT_EVENT(0, PREF_BO_LEARNING_PHASES);
 }
 
 void replace_best_offset(BO_Pref* bo_pref){ 
@@ -425,7 +441,7 @@ void above_req(Mem_Req_Info* req, BO_Pref* bo_pref, uns8 proc_id){
 
     // if addr - d is in the rr table, incriment the score for the offset correlating with current round index. 
     if(access){ 
-        incriminet_score(bo_pref->round_index, bo_pref->score_table); 
+        incriment_score(bo_pref->round_index, bo_pref->score_table); 
         STAT_EVENT(proc_id, PREF_BO_USEFUL_PREFETCHES);
     }
 
