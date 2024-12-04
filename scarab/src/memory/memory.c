@@ -57,6 +57,7 @@
 #include "prefetcher/pref_common.h"
 #include "prefetcher/stream_pref.h"
 #include "prefetcher/fdip_new.h"
+#include "prefetcher/pref_bo.h"
 #include "statistics.h"
 //#include "dram.h"
 //#include "dram.param.h"
