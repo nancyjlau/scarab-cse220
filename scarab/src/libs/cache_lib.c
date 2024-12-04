@@ -291,12 +291,6 @@ void* cache_insert(Cache* cache, uns8 proc_id, Addr addr, Addr* line_addr,
     result = cache_insert_replpos(cache, proc_id, addr, line_addr, repl_line_addr,
                               INSERT_REPL_DEFAULT, FALSE);
 
-  // notify best offset prefetcher of cache fill
-  if(cache->name && strstr(cache->name, "UMLC")) {
-    Flag is_prefetch = cache->entries[*line_addr][*repl_line_addr].RR_element;
-    pref_bo_on_cache_fill(proc_id, addr, is_prefetch);
-  }
-
   return result;
 }
 

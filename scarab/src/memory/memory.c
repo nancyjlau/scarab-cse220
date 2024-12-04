@@ -4777,6 +4777,8 @@ Flag mlc_fill_line(Mem_Req* req) {
     data = (MLC_Data*)cache_insert_replpos(
       &MLC(req->proc_id)->cache, req->proc_id, req->addr, &line_addr,
       &repl_line_addr, mem->pref_replpos, TRUE);
+    pref_bo_on_cache_fill(req->proc_id, req->addr, TRUE);
+      
   } else {
     data = (MLC_Data*)cache_insert(&MLC(req->proc_id)->cache, req->proc_id,
                                    req->addr, &line_addr, &repl_line_addr);
@@ -4959,6 +4961,7 @@ Flag mlc_fill_line(Mem_Req* req) {
   ASSERT(req->proc_id, req->mlc_miss);
 
   req->mlc_miss_cycle = MAX_CTR;
+  // notify best offset prefetcher of cache fill
 
   return SUCCESS;
 }
