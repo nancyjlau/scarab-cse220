@@ -1202,9 +1202,13 @@ Flag mem_process_mlc_hit_access(Mem_Req* req, Mem_Queue_Entry* mlc_queue_entry,
         if(data->prefetch) {  // prefetch hit
           DEBUG(req->proc_id, "%7lld mlc prefetch hit %d\n", cycle_count,
                 (int)(req->addr));
+          
           STAT_EVENT(req->proc_id, MLC_PREF_HIT);
           if(!data->seen_prefetch) {
             data->seen_prefetch = TRUE;
+            pref_umlc_pref_hit(
+            req->proc_id, req->addr, data->pref_loadPC, data->global_hist,
+            lru_position, data->prefetcher_id); 
 
             STAT_EVENT(req->proc_id, MLC_PREF_UNIQUE_HIT);
             STAT_EVENT(req->proc_id, PREF_MLC_TOTAL_USED);

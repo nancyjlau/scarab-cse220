@@ -209,6 +209,7 @@ Score_Table_Entry* init_score_table_entry(int offset){ // still need to check of
 void pref_bo_umlc_miss(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hist) {
     DEBUG(proc_id, "BO UMLC miss - addr: %llx pc: %llx", lineAddr, loadPC);
     pref_bo_umlc_train(proc_id, lineAddr, loadPC, FALSE); 
+    STAT_EVENT(proc_id, PREF_ABOVE_SEEN);
     if(bo_cores.bo_pref_core[proc_id].on) {
         send_request(proc_id, lineAddr, loadPC, global_hist);
     } else {
@@ -218,8 +219,10 @@ void pref_bo_umlc_miss(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hi
 
 
 void pref_bo_umlc_prefhit(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hist) {
+    STAT_EVENT(proc_id, PREF_BO_USEFUL_PREFETCHES);
     DEBUG(proc_id, "BO UMLC pref hit - addr: %llx pc: %llx", lineAddr, loadPC);
     pref_bo_umlc_train(proc_id, lineAddr, loadPC, TRUE);
+    STAT_EVENT(proc_id, PREF_ABOVE_SEEN);
     if(bo_cores.bo_pref_core[proc_id].on) {
         send_request(proc_id, lineAddr, loadPC, global_hist);
     } else {
@@ -254,12 +257,10 @@ void below_receive(uns8 proc_id, Addr line_addr, Flag is_prefetch) {
     BO_Pref* bo_pref = &bo_cores.bo_pref_core[proc_id];
     
     if (!bo_pref->on){
-        STAT_EVENT(proc_id, PREF_BO_RR_TABLE_UPDATES);
         insert_rr_table(line_addr, bo_pref->rr_table, proc_id);
     }
     if(is_prefetch){
-        STAT_EVENT(proc_id, PREF_BO_RR_TABLE_UPDATES);
-        insert_rr_table(line_addr - bo_pref->best_offset, bo_pref->rr_table, proc_id);
+        insert_rr_table(line_addr - (bo_pref->best_offset << LOG2(DCACHE_LINE_SIZE)), bo_pref->rr_table, proc_id);
     }
     // need to make sure the hash table REPLACES on 
 }
@@ -268,13 +269,12 @@ void below_receive(uns8 proc_id, Addr line_addr, Flag is_prefetch) {
 //  this is our "out" interface, which sends information to other sections of code. 
 void send_request(uns8 proc_id, Addr lineAddr, Addr loadPC, uns32 global_hist){ // this is purely a placeholder/ theoretical, we need to figure out how the prefetching actually works
 // what this SHOULD do is send/ make a prefetch request for X + D where D is the learned offset and X is the current request 
-    Addr new_addr = lineAddr + bo_cores.bo_pref_core[proc_id].best_offset; // >> LOG2(DCACHE_LINE_SIZE)
+    Addr line_index = (lineAddr >> LOG2(DCACHE_LINE_SIZE)) + bo_cores.bo_pref_core[proc_id].best_offset; // >> LOG2(DCACHE_LINE_SIZE)
     // Flag pref_addto_ul1req_queue(uns8 proc_id, Addr line_index, uns8 prefetcher_id)
     // more handling needs to happen here 
     // Also, looking at the code for other prefetchers, it looks like we'll want to have an array of size (num cores) of prefetchers, and access the correct prefetcher based on procid 
     //
     // idk what im doing ... but send to umlc instead of ul1
-    Addr line_index = new_addr;
     
     // also i have no idea if the debug stuff will show up or not
     DEBUG(proc_id, "BO sending UMLC prefetch - addr: %llx offset: %llu",      new_addr, bo_cores.bo_pref_core[proc_id].best_offset);
@@ -369,13 +369,14 @@ uns8 hash_function(Addr mem_req) { // take a memory address (make sure to take t
 
 void incriment_score(int index, Score_Table* score_table){ 
     // incriment score of index 
-    score_table->table[index]->score++; 
+    score_table->table[index]->score = score_table->table[index]->score + 1; 
     
 
     // updates highest score index if updated score is new highest 
     if(score_table->table[index]->score > score_table->table[score_table->highest_score_index]->score) {
         
         score_table->highest_score_index = index;  
+        STAT_EVENT(0, PREF_BO_INDEX_UPDATE);
     }
 }
 
@@ -400,19 +401,22 @@ void end_learning_phase(BO_Pref* bo_pref){
     // update best offset 
     replace_best_offset(bo_pref); 
 
+    
+
+    // check if prefetching should be turned on or off for next learning phase 
+    if(bo_pref->score_table->table[bo_pref->score_table->highest_score_index]->score <= PREF_BO_BAD_SCORE) { 
+        bo_pref->on = FALSE; 
+        STAT_EVENT(0, PREF_BO_TOGGLED_OFF);
+    } else {
+        bo_pref->on = TRUE; 
+        STAT_EVENT(0, PREF_BO_TOGGLED_ON);
+    }
+    STAT_EVENT(0, PREF_BO_LEARNING_PHASES);
     // reset round count
     bo_pref->round_count = 0; 
 
     // reset scores 
     reset_scores(bo_pref->score_table); 
-
-    // check if prefetching should be turned on or off for next learning phase 
-    if(bo_pref->score_table->table[bo_pref->score_table->highest_score_index]->score <= PREF_BO_BAD_SCORE) { 
-        bo_pref->on = FALSE; 
-    } else {
-        bo_pref->on = TRUE; 
-    }
-    STAT_EVENT(0, PREF_BO_LEARNING_PHASES);
 }
 
 void replace_best_offset(BO_Pref* bo_pref){ 
@@ -437,12 +441,11 @@ void above_req(Mem_Req_Info* req, BO_Pref* bo_pref, uns8 proc_id){
     Addr d = pick_d(bo_pref->score_table, bo_pref->round_index); 
 
     // access recent requests table 
-    Addr* access = access_rr_table(req->addr - d, bo_pref->rr_table, proc_id); 
+    Addr* access = access_rr_table(req->addr - (d << LOG2(DCACHE_LINE_SIZE)), bo_pref->rr_table, proc_id); 
 
     // if addr - d is in the rr table, incriment the score for the offset correlating with current round index. 
     if(access){ 
         incriment_score(bo_pref->round_index, bo_pref->score_table); 
-        STAT_EVENT(proc_id, PREF_BO_USEFUL_PREFETCHES);
     }
 
     // incriments round index. Round index used to determine d, and position within a round. 
